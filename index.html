@@ -859,7 +859,17 @@
           this.doseMax = range.max;
         },
 
-        // Save setup
+        // Check if current setup is already saved
+        isCurrentSetupSaved() {
+          return this.savedSetups.some(s =>
+            s.peptideId === this.peptideId &&
+            s.vialMg === this.vialMg &&
+            s.waterMl === this.waterMl &&
+            s.syringeSize === this.syringeSize
+          );
+        },
+
+        // Save setup (for quick mode - switches to quick)
         saveSetup() {
           const setup = {
             id: Date.now().toString(36),
@@ -880,6 +890,27 @@
           this.mode = 'quick';
         },
 
+        // Save setup from guided mode (stays in guided)
+        saveSetupGuided() {
+          if (this.isCurrentSetupSaved()) return;
+
+          const setup = {
+            id: Date.now().toString(36),
+            name: `${this.peptide.name} ${this.vialMg}mg/${this.waterMl}mL`,
+            peptideId: this.peptideId,
+            vialMg: this.vialMg,
+            waterMl: this.waterMl,
+            syringeSize: this.syringeSize,
+            createdAt: new Date().toISOString()
+          };
+
+          this.savedSetups.push(setup);
+          this.storage.setups = this.savedSetups;
+          this.storage.hasCompletedSetup = true;
+          Storage.save(this.storage);
+          this.activeSetupId = setup.id;
+        },
+
         // Load a saved setup
         loadSetup(setup) {
           this.peptideId = setup.peptideId;
@@ -888,6 +919,24 @@
           this.syringeSize = setup.syringeSize;
           this.activeSetupId = setup.id;
           this.currentDose = PEPTIDES[setup.peptideId]?.defaultDose || 1;
+        },
+
+        // Load a saved setup in guided mode (jumps to step 6)
+        loadSetupGuided(setup) {
+          this.peptideId = setup.peptideId;
+          this.vialMg = setup.vialMg;
+          this.waterMl = setup.waterMl;
+          this.syringeSize = setup.syringeSize;
+          this.activeSetupId = setup.id;
+          // Set dose range based on peptide
+          const p = PEPTIDES[setup.peptideId];
+          if (p && p.doseRanges) {
+            const firstRange = Object.values(p.doseRanges)[0];
+            this.doseMin = firstRange.min;
+            this.doseMax = firstRange.max;
+          }
+          this.currentDose = p?.defaultDose || 1;
+          this.step = 6;
         },
 
         // Delete setup
@@ -969,6 +1018,37 @@
             </button>
           </div>
         </header>
+
+        <!-- Saved Setups -->
+        <div x-show="savedSetups.length > 0" class="mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-stone-400 uppercase tracking-wide">Saved Setups</span>
+            <button
+              @click="step = 1; activeSetupId = null"
+              class="text-xs text-teal-600 hover:text-teal-700 font-medium"
+            >+ New</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <template x-for="setup in savedSetups" :key="setup.id">
+              <div
+                class="group flex items-center gap-1 bg-white border rounded-lg px-2.5 py-1.5 text-sm cursor-pointer hover:border-teal-300 transition-colors"
+                :class="activeSetupId === setup.id ? 'border-teal-500 bg-teal-50' : 'border-stone-200'"
+                @click="loadSetupGuided(setup)"
+              >
+                <span class="text-stone-700" x-text="setup.name"></span>
+                <button
+                  @click.stop="deleteSetup(setup.id)"
+                  class="ml-1 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
 
         <!-- Progressive Steps -->
         <div class="space-y-2">
@@ -1368,6 +1448,26 @@
                 <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
                   <span class="text-stone-400 block text-xs tooltip" data-tip="Insulin syringe size (0.5mL = 50 units max)">Syringe</span>
                   <div class="font-mono text-stone-700 font-medium" x-text="syringeSize + ' mL'"></div>
+                </div>
+              </div>
+
+              <!-- Save Setup Button -->
+              <div class="pt-2 border-t border-stone-100">
+                <button
+                  @click="saveSetupGuided()"
+                  x-show="!isCurrentSetupSaved()"
+                  class="w-full py-2.5 rounded-lg text-sm font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center gap-2"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                  </svg>
+                  Save this setup
+                </button>
+                <div x-show="isCurrentSetupSaved()" class="text-center text-sm text-teal-600 py-2">
+                  <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Setup saved
                 </div>
               </div>
             </div>
