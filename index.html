@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peptide Calculator</title>
+  <meta name="description" content="Simple peptide reconstitution and dosing calculator. Get the right units every time.">
+
+  <!-- Fonts: Fraunces (elegant serif), Outfit (friendly sans), JetBrains Mono (precise numbers) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230D9488'/></svg>">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            stone: {
+              50: '#FAFAF9',
+              100: '#F5F5F4',
+              150: '#EEEEEC',
+              200: '#E7E5E4',
+              300: '#D6D3D1',
+              400: '#A8A29E',
+              500: '#78716C',
+              600: '#57534E',
+              700: '#44403C',
+              800: '#292524',
+              900: '#1C1917'
+            },
+            teal: {
+              50: '#F0FDFA',
+              100: '#CCFBF1',
+              200: '#99F6E4',
+              300: '#5EEAD4',
+              400: '#2DD4BF',
+              500: '#14B8A6',
+              600: '#0D9488',
+              700: '#0F766E',
+              800: '#115E59',
+              900: '#134E4A'
+            }
+          },
+          fontFamily: {
+            serif: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['Outfit', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #FAFAF9;
+      min-height: 100vh;
+    }
+
+    /* Typography utilities */
+    .font-display {
+      font-family: 'Fraunces', Georgia, serif;
+      font-optical-sizing: auto;
+    }
+
+    .font-numbers {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: 'tnum' on, 'lnum' on;
+    }
+
+    /* Subtle texture */
+    .texture-dots {
+      background-image: radial-gradient(circle, #D6D3D1 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Card styling */
+    .card {
+      background: white;
+      border: 1px solid #E7E5E4;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
+    }
+
+    /* Input styling */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .input-field {
+      background: #FAFAF9;
+      border: 2px solid #E7E5E4;
+      transition: all 0.2s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #0D9488;
+      background: white;
+    }
+
+    .input-field:hover:not(:focus) {
+      border-color: #D6D3D1;
+    }
+
+    /* Selection cards */
+    .select-card {
+      background: white;
+      border: 2px solid #E7E5E4;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .select-card:hover {
+      border-color: #A8A29E;
+      transform: translateY(-1px);
+    }
+
+    .select-card.selected {
+      border-color: #0D9488;
+      background: #F0FDFA;
+    }
+
+    .select-card.selected .select-indicator {
+      background: #0D9488;
+      border-color: #0D9488;
+    }
+
+    .select-indicator {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #D6D3D1;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .select-indicator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+    }
+
+    .select-card.selected .select-indicator::after {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Pill buttons */
+    .pill-btn {
+      background: white;
+      border: 1.5px solid #E7E5E4;
+      transition: all 0.15s ease;
+    }
+
+    .pill-btn:hover {
+      border-color: #0D9488;
+      color: #0D9488;
+    }
+
+    .pill-btn.active {
+      background: #0D9488;
+      border-color: #0D9488;
+      color: white;
+    }
+
+    /* Progress bar */
+    .progress-track {
+      height: 3px;
+      background: #E7E5E4;
+      border-radius: 2px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #0D9488;
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Step transitions */
+    .step-content {
+      animation: fadeSlideIn 0.4s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Syringe styles */
+    .syringe-liquid {
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Result number animation */
+    .result-number {
+      transition: all 0.3s ease;
+    }
+
+    /* Button styles */
+    .btn-primary {
+      background: #0D9488;
+      color: white;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background: #0F766E;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #57534E;
+      border: 1.5px solid #E7E5E4;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: #A8A29E;
+      color: #44403C;
+    }
+
+    /* Quick calc compact input */
+    .compact-input {
+      background: #FAFAF9;
+      border: 1.5px solid #E7E5E4;
+      transition: all 0.15s ease;
+    }
+
+    .compact-input:focus-within {
+      border-color: #0D9488;
+      background: white;
+    }
+
+    /* Dropdown */
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2378716C'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F5F5F4;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D6D3D1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #A8A29E;
+    }
+
+    /* Focus visible */
+    :focus-visible {
+      outline: 2px solid #0D9488;
+      outline-offset: 2px;
+    }
+
+    /* Recommendation badge */
+    .badge-recommended {
+      background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* Warning/info states */
+    .warning-soft {
+      background: #FEF3C7;
+      border: 1px solid #FCD34D;
+      color: #92400E;
+    }
+
+    .info-soft {
+      background: #F0FDFA;
+      border: 1px solid #99F6E4;
+      color: #115E59;
+    }
+  </style>
+
+  <script>
+    // ============================================
+    // PEPTIDE DATA
+    // ============================================
+    const PEPTIDES = {
+      tirzepatide: {
+        id: 'tirzepatide',
+        name: 'Tirzepatide',
+        aliases: ['Mounjaro', 'Zepbound'],
+        category: 'GLP-1/GIP',
+        description: 'Dual GLP-1/GIP agonist for weight management',
+        commonVials: [5, 10, 15, 30],
+        doseRanges: {
+          microdose: { min: 1, max: 2.5, label: 'Microdose' },
+          low: { min: 2.5, max: 5, label: 'Low dose' },
+          normal: { min: 5, max: 10, label: 'Normal dose' },
+          high: { min: 10, max: 15, label: 'High dose' }
+        },
+        quickDoses: [1.25, 2.5, 5, 7.5, 10, 15],
+        defaultDose: 2.5
+      },
+      retatrutide: {
+        id: 'retatrutide',
+        name: 'Retatrutide',
+        aliases: [],
+        category: 'GLP-1/GIP/Glucagon',
+        description: 'Triple agonist (investigational)',
+        commonVials: [5, 10, 15],
+        doseRanges: {
+          microdose: { min: 0.5, max: 2, label: 'Microdose' },
+          low: { min: 2, max: 4, label: 'Low dose' },
+          medium: { min: 4, max: 8, label: 'Medium dose' },
+          high: { min: 8, max: 12, label: 'High dose' }
+        },
+        quickDoses: [1, 2, 4, 6, 8, 12],
+        defaultDose: 2
+      },
+      other: {
+        id: 'other',
+        name: 'Other',
+        aliases: [],
+        category: 'Custom',
+        description: 'Enter custom peptide details',
+        commonVials: [5, 10],
+        doseRanges: {},
+        quickDoses: [],
+        defaultDose: 1
+      }
+    };
+
+    // ============================================
+    // CALCULATIONS
+    // ============================================
+    function calculateConcentration(vialMg, waterMl) {
+      if (!vialMg || !waterMl || waterMl <= 0) return null;
+      return vialMg / waterMl; // mg/mL
+    }
+
+    function calculateUnits(doseMg, concentrationMgPerMl) {
+      if (!doseMg || !concentrationMgPerMl) return null;
+      const ml = doseMg / concentrationMgPerMl;
+      return Math.round(ml * 100 * 10) / 10; // units, 1 decimal
+    }
+
+    function calculateMl(doseMg, concentrationMgPerMl) {
+      if (!doseMg || !concentrationMgPerMl) return null;
+      return Math.round((doseMg / concentrationMgPerMl) * 1000) / 1000;
+    }
+
+    function calculateDosesPerVial(vialMg, doseMg) {
+      if (!vialMg || !doseMg || doseMg <= 0) return null;
+      return Math.floor(vialMg / doseMg);
+    }
+
+    // Smart recommendation: find best water amount for dose range
+    // Goal: Use preferred concentration (5, 10, or 20 mg/mL) where min dose ≈ 10 units
+    function recommendWater(vialMg, minDose, maxDose, syringeUnits = 50) {
+      const preferredConcentrations = [5, 10, 20]; // Preferred clean concentrations
+      const targetMinUnits = 10; // Target ~10 units for minimum dose
+
+      // Calculate ideal concentration where minDose = 10 units
+      // units = (dose / concentration) * 100, so concentration = dose * 10
+      const idealConc = minDose * 10;
+
+      // Find the best preferred concentration
+      // We want concentration <= idealConc so that minDose gives >= 10 units
+      // Sort by how close they get to 10 units (prefer closest to 10)
+      const options = preferredConcentrations
+        .map(conc => {
+          const waterMl = vialMg / conc;
+          const minUnits = (minDose / conc) * 100;
+          const maxUnits = (maxDose / conc) * 100;
+          return {
+            concentration: conc,
+            waterMl: Math.round(waterMl * 100) / 100,
+            minUnits: Math.round(minUnits * 10) / 10,
+            maxUnits: Math.round(maxUnits * 10) / 10,
+            // How close is minUnits to our target of 10?
+            distanceFromTarget: Math.abs(minUnits - targetMinUnits),
+            // Is water amount reasonable?
+            isValidWater: waterMl >= 0.5 && waterMl <= 5,
+            // Does max dose fit in syringe?
+            fitsInSyringe: maxUnits <= syringeUnits
+          };
+        })
+        .filter(opt => opt.isValidWater) // Must have valid water amount
+        .sort((a, b) => {
+          // Prioritize options where max fits in syringe
+          if (a.fitsInSyringe && !b.fitsInSyringe) return -1;
+          if (!a.fitsInSyringe && b.fitsInSyringe) return 1;
+          // Then sort by closest to 10 units for min dose
+          return a.distanceFromTarget - b.distanceFromTarget;
+        });
+
+      if (options.length > 0) {
+        const best = options[0];
+        return {
+          waterMl: best.waterMl,
+          concentration: best.concentration,
+          minUnits: Math.round(best.minUnits),
+          maxUnits: Math.round(best.maxUnits),
+          isIdeal: best.fitsInSyringe && best.minUnits >= 8
+        };
+      }
+
+      // Fallback: use 2mL
+      const fallbackWater = 2;
+      const fallbackConc = vialMg / fallbackWater;
+      return {
+        waterMl: fallbackWater,
+        concentration: fallbackConc,
+        minUnits: Math.round((minDose / fallbackConc) * 100),
+        maxUnits: Math.round((maxDose / fallbackConc) * 100),
+        isIdeal: false
+      };
+    }
+
+    // Simple water recommendation based on vial size only (for Advanced mode)
+    // Returns water amount that creates a clean concentration (5, 10, or 20 mg/mL)
+    function recommendWaterSimple(vialMg) {
+      const allowedConcentrations = [10, 5, 20]; // Prefer 10, then 5, then 20
+
+      for (const conc of allowedConcentrations) {
+        const waterMl = vialMg / conc;
+        // Only allow reasonable water volumes (0.5 to 3.5 mL for standard vials)
+        if (waterMl >= 0.5 && waterMl <= 3.5) {
+          return Math.round(waterMl * 100) / 100; // Round to 2 decimals
+        }
+      }
+
+      // Fallback to 2mL if no clean concentration works
+      return 2;
+    }
+
+    // ============================================
+    // STORAGE
+    // ============================================
+    const Storage = {
+      KEY: 'peptideCalc_v2',
+
+      get() {
+        try {
+          return JSON.parse(localStorage.getItem(this.KEY)) || this.defaults();
+        } catch {
+          return this.defaults();
+        }
+      },
+
+      save(data) {
+        try {
+          localStorage.setItem(this.KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn('Could not save to localStorage', e);
+        }
+      },
+
+      defaults() {
+        return {
+          hasCompletedSetup: false,
+          setups: [],
+          lastUsed: null
+        };
+      }
+    };
+
+    // ============================================
+    // SVG SYRINGE GENERATOR - Realistic Insulin Syringe
+    // ============================================
+    function generateSyringe(syringeSize, fillUnits, maxUnits) {
+      const totalUnits = syringeSize === '0.5' ? 50 : 100;
+      const majorTick = syringeSize === '0.5' ? 10 : 20;
+      const minorTick = syringeSize === '0.5' ? 5 : 10;
+      const clampedUnits = Math.min(Math.max(fillUnits || 0, 0), totalUnits);
+      const fillPct = (clampedUnits / totalUnits) * 100;
+
+      const width = 340;
+      const height = 85;
+      const barrelX = 60;
+      const barrelY = 30;
+      const barrelW = 220;  // Wider barrel to fill more space
+      const barrelH = 20;
+
+      // Generate tick marks ON the barrel (like real syringes)
+      let ticks = '';
+      const unitW = barrelW / totalUnits;
+      for (let i = 0; i <= totalUnits; i++) {
+        const x = barrelX + i * unitW;
+        const isMajor = i % majorTick === 0;
+        const isMid = !isMajor && i % minorTick === 0;
+        const tickH = isMajor ? barrelH * 0.6 : (isMid ? barrelH * 0.4 : barrelH * 0.25);
+        const strokeW = isMajor ? 0.8 : 0.5;
+
+        // Ticks on barrel (from bottom edge going up)
+        ticks += `<line x1="${x}" y1="${barrelY + barrelH}" x2="${x}" y2="${barrelY + barrelH - tickH}" stroke="#1a1a1a" stroke-width="${strokeW}"/>`;
+
+        // Labels for major ticks (numbers count DOWN: max at plunger, 0 at needle)
+        if (isMajor) {
+          const label = totalUnits - i; // 50 at plunger (left), 0 at needle (right)
+          ticks += `<text x="${x}" y="${barrelY + barrelH + 12}" text-anchor="middle" fill="#1a1a1a" font-size="8" font-family="JetBrains Mono, monospace" font-weight="600">${label}</text>`;
+        }
+      }
+
+      // Fill calculation:
+      // Numbers count DOWN from left to right (50 at plunger, 0 at needle)
+      // So 12.5 units = liquid from the "0" end back to the "12.5" mark
+      // The indicator shows where to draw TO (reading the number on the barrel)
+      // Liquid starts at the needle end (right) and extends left by fillPct
+      const fillW = (fillPct / 100) * barrelW;
+      // Indicator position: for 12.5 units on a 50-unit syringe, indicator is at 12.5/50 = 25% from the RIGHT
+      // Which means 75% from the LEFT
+      const indicatorX = barrelX + barrelW - fillW;
+      const exceedsSyringe = fillUnits > totalUnits;
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full max-w-md" role="img" aria-label="Syringe showing ${clampedUnits} units">
+          <defs>
+            <!-- Liquid gradient (clear/light blue like actual peptide solution) -->
+            <linearGradient id="liquid" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#E0F7FA" stop-opacity="0.7"/>
+              <stop offset="50%" stop-color="#B2EBF2" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#80DEEA" stop-opacity="0.7"/>
+            </linearGradient>
+
+            <!-- Warning liquid -->
+            <linearGradient id="liquidWarn" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#FFCDD2" stop-opacity="0.8"/>
+              <stop offset="50%" stop-color="#EF9A9A" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#E57373" stop-opacity="0.8"/>
+            </linearGradient>
+
+            <!-- Barrel glass effect -->
+            <linearGradient id="barrelGlass" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="20%" stop-color="#FAFAFA"/>
+              <stop offset="80%" stop-color="#F0F0F0"/>
+              <stop offset="100%" stop-color="#E8E8E8"/>
+            </linearGradient>
+
+            <!-- Orange plunger cap -->
+            <linearGradient id="orangeCap" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#F57C00"/>
+              <stop offset="30%" stop-color="#FF9800"/>
+              <stop offset="70%" stop-color="#FFB74D"/>
+              <stop offset="100%" stop-color="#FF9800"/>
+            </linearGradient>
+
+            <!-- Orange cap end -->
+            <linearGradient id="orangeCapEnd" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#FFB74D"/>
+              <stop offset="50%" stop-color="#FF9800"/>
+              <stop offset="100%" stop-color="#F57C00"/>
+            </linearGradient>
+
+            <!-- Plunger rod -->
+            <linearGradient id="plungerRod" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#FAFAFA"/>
+              <stop offset="30%" stop-color="#F5F5F5"/>
+              <stop offset="70%" stop-color="#E0E0E0"/>
+              <stop offset="100%" stop-color="#BDBDBD"/>
+            </linearGradient>
+
+            <!-- Black rubber gasket -->
+            <linearGradient id="rubberGasket" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#424242"/>
+              <stop offset="50%" stop-color="#212121"/>
+              <stop offset="100%" stop-color="#424242"/>
+            </linearGradient>
+
+            <!-- Needle hub (clear/white) -->
+            <linearGradient id="needleHub" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#F5F5F5"/>
+              <stop offset="50%" stop-color="#FFFFFF"/>
+              <stop offset="100%" stop-color="#E0E0E0"/>
+            </linearGradient>
+
+            <!-- Needle metal -->
+            <linearGradient id="needleMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#E0E0E0"/>
+              <stop offset="50%" stop-color="#BDBDBD"/>
+              <stop offset="100%" stop-color="#9E9E9E"/>
+            </linearGradient>
+
+            <!-- Clip path for liquid inside barrel -->
+            <clipPath id="barrelClip">
+              <rect x="${barrelX}" y="${barrelY}" width="${barrelW}" height="${barrelH}" rx="3"/>
+            </clipPath>
+          </defs>
+
+          <!-- ORANGE PLUNGER CAP (left end) -->
+          <rect x="2" y="${barrelY - 6}" width="28" height="${barrelH + 12}" rx="3" fill="url(#orangeCap)" stroke="#E65100" stroke-width="0.5"/>
+          <!-- Cap end detail -->
+          <ellipse cx="4" cy="${barrelY + barrelH/2}" rx="2" ry="${barrelH/2 + 4}" fill="url(#orangeCapEnd)"/>
+
+          <!-- PLUNGER ROD (white/gray) -->
+          <rect x="30" y="${barrelY + 3}" width="30" height="${barrelH - 6}" rx="2" fill="url(#plungerRod)" stroke="#BDBDBD" stroke-width="0.5"/>
+
+          <!-- BLACK RUBBER GASKET (inside barrel at plunger position) -->
+          <rect x="${barrelX}" y="${barrelY + 1}" width="5" height="${barrelH - 2}" rx="1" fill="url(#rubberGasket)"/>
+
+          <!-- BARREL (clear glass/plastic) -->
+          <rect x="${barrelX}" y="${barrelY}" width="${barrelW}" height="${barrelH}" rx="3" fill="url(#barrelGlass)" stroke="#BDBDBD" stroke-width="1"/>
+
+          <!-- Barrel highlight -->
+          <rect x="${barrelX + 2}" y="${barrelY + 2}" width="${barrelW - 4}" height="5" rx="2" fill="rgba(255,255,255,0.6)"/>
+
+          <!-- LIQUID FILL (from indicator position to needle end on the RIGHT side) -->
+          ${fillPct > 0 ? `
+            <g clip-path="url(#barrelClip)">
+              <rect x="${indicatorX}" y="${barrelY + 2}" width="${fillW}" height="${barrelH - 4}" fill="url(#${exceedsSyringe ? 'liquidWarn' : 'liquid'})" class="syringe-liquid"/>
+            </g>
+          ` : ''}
+
+          <!-- FINGER FLANGES (at needle end of barrel) -->
+          <rect x="${barrelX + barrelW - 3}" y="${barrelY - 6}" width="8" height="6" rx="1" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="0.5"/>
+          <rect x="${barrelX + barrelW - 3}" y="${barrelY + barrelH}" width="8" height="6" rx="1" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="0.5"/>
+
+          <!-- NEEDLE HUB (clear/white tapered) - shorter -->
+          <path d="M${barrelX + barrelW + 3} ${barrelY + 4}
+                   L${barrelX + barrelW + 15} ${barrelY + barrelH/2 - 1}
+                   L${barrelX + barrelW + 15} ${barrelY + barrelH/2 + 1}
+                   L${barrelX + barrelW + 3} ${barrelY + barrelH - 4}
+                   Z" fill="url(#needleHub)" stroke="#BDBDBD" stroke-width="0.5"/>
+
+          <!-- NEEDLE (metal, shorter with tapered point) -->
+          <line x1="${barrelX + barrelW + 15}" y1="${barrelY + barrelH/2}" x2="${barrelX + barrelW + 42}" y2="${barrelY + barrelH/2}" stroke="#9E9E9E" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Needle tip (angled bevel like real needles) -->
+          <path d="M${barrelX + barrelW + 42} ${barrelY + barrelH/2 - 0.75}
+                   L${barrelX + barrelW + 50} ${barrelY + barrelH/2 + 1}
+                   L${barrelX + barrelW + 42} ${barrelY + barrelH/2 + 0.75}
+                   Z" fill="#757575"/>
+
+          <!-- TICK MARKS (on barrel) -->
+          ${ticks}
+
+          <!-- DOSE INDICATOR LINE -->
+          ${fillPct > 0 && clampedUnits > 0 ? `
+            <line x1="${indicatorX}" y1="${barrelY - 8}" x2="${indicatorX}" y2="${barrelY + barrelH + 16}" stroke="${exceedsSyringe ? '#D32F2F' : '#00897B'}" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="${indicatorX - 5},${barrelY - 8} ${indicatorX + 5},${barrelY - 8} ${indicatorX},${barrelY - 1}" fill="${exceedsSyringe ? '#D32F2F' : '#00897B'}"/>
+          ` : ''}
+        </svg>
+      `;
+    }
+
+    // ============================================
+    // ALPINE APP
+    // ============================================
+    function peptideApp() {
+      return {
+        // Mode: 'guided', 'quick', or 'advanced'
+        mode: 'advanced',
+
+        // Guided setup state
+        step: 1,
+        totalSteps: 6,
+
+        // Form data
+        peptideId: 'tirzepatide',
+        vialMg: 10,
+        doseMin: 2.5,
+        doseMax: 5,
+        waterMl: 2,
+        syringeSize: '0.5',
+        currentDose: 2.5,
+
+        // Saved data
+        storage: null,
+        savedSetups: [],
+        activeSetupId: null,
+
+        // UI state
+        showWaterOptions: false,
+        waterManuallySet: false, // Track if user manually edited water in Advanced mode
+
+        // Getters
+        get peptide() {
+          return PEPTIDES[this.peptideId] || PEPTIDES.other;
+        },
+
+        get concentration() {
+          return calculateConcentration(this.vialMg, this.waterMl);
+        },
+
+        get units() {
+          return calculateUnits(this.currentDose, this.concentration);
+        },
+
+        get ml() {
+          return calculateMl(this.currentDose, this.concentration);
+        },
+
+        get dosesPerVial() {
+          return calculateDosesPerVial(this.vialMg, this.currentDose);
+        },
+
+        get recommendation() {
+          return recommendWater(this.vialMg, this.doseMin, this.doseMax, this.syringeSize === '0.5' ? 50 : 100);
+        },
+
+        get recommendedWater() {
+          return recommendWaterSimple(this.vialMg);
+        },
+
+        get syringeSvg() {
+          const maxUnits = this.syringeSize === '0.5' ? 50 : 100;
+          return generateSyringe(this.syringeSize, this.units, maxUnits);
+        },
+
+        get exceedsSyringe() {
+          const max = this.syringeSize === '0.5' ? 50 : 100;
+          return this.units > max;
+        },
+
+        get unitsTooSmall() {
+          return this.units > 0 && this.units < 5;
+        },
+
+        // Initialization
+        init() {
+          this.storage = Storage.get();
+          this.savedSetups = this.storage.setups || [];
+
+          // Restore last used settings if available
+          if (this.storage.lastUsed) {
+            this.restoreLastUsed();
+          }
+
+          // Watch for changes to save
+          this.$watch('currentDose', () => this.saveLastUsed());
+        },
+
+        // Step navigation
+        nextStep() {
+          if (this.step < this.totalSteps) {
+            this.step++;
+            if (this.step === 4) {
+              // Apply recommendation when reaching water step
+              this.waterMl = this.recommendation.waterMl;
+            }
+          }
+        },
+
+        prevStep() {
+          if (this.step > 1) this.step--;
+        },
+
+        // Peptide selection
+        selectPeptide(id) {
+          this.peptideId = id;
+          const p = PEPTIDES[id];
+          if (p) {
+            this.vialMg = p.commonVials[1] || p.commonVials[0] || 10;
+            this.currentDose = p.defaultDose || 1;
+            if (p.doseRanges.low) {
+              this.doseMin = p.doseRanges.low.min;
+              this.doseMax = p.doseRanges.standard?.max || p.doseRanges.low.max;
+            }
+            // Auto-update water recommendation in Advanced mode
+            if (this.mode === 'advanced') {
+              this.waterMl = this.recommendedWater;
+              this.waterManuallySet = false;
+            }
+          }
+        },
+
+        // Update water when vial changes (for Advanced mode)
+        onVialChange() {
+          if (this.mode === 'advanced' && !this.waterManuallySet) {
+            this.waterMl = recommendWaterSimple(this.vialMg);
+          }
+          this.saveLastUsed();
+        },
+
+        // Mark water as manually set when user edits it
+        onWaterManualChange() {
+          this.waterManuallySet = true;
+          this.saveLastUsed();
+        },
+
+        // Apply a dose range preset
+        applyDoseRange(range) {
+          this.doseMin = range.min;
+          this.doseMax = range.max;
+        },
+
+        // Save setup
+        saveSetup() {
+          const setup = {
+            id: Date.now().toString(36),
+            name: `${this.peptide.name} ${this.vialMg}mg/${this.waterMl}mL`,
+            peptideId: this.peptideId,
+            vialMg: this.vialMg,
+            waterMl: this.waterMl,
+            syringeSize: this.syringeSize,
+            createdAt: new Date().toISOString()
+          };
+
+          this.savedSetups.push(setup);
+          this.storage.setups = this.savedSetups;
+          this.storage.hasCompletedSetup = true;
+          Storage.save(this.storage);
+
+          this.activeSetupId = setup.id;
+          this.mode = 'advanced';
+        },
+
+        // Load a saved setup
+        loadSetup(setup) {
+          this.peptideId = setup.peptideId;
+          this.vialMg = setup.vialMg;
+          this.waterMl = setup.waterMl;
+          this.syringeSize = setup.syringeSize;
+          this.activeSetupId = setup.id;
+          this.currentDose = PEPTIDES[setup.peptideId]?.defaultDose || 1;
+        },
+
+        // Delete setup
+        deleteSetup(id) {
+          this.savedSetups = this.savedSetups.filter(s => s.id !== id);
+          this.storage.setups = this.savedSetups;
+          Storage.save(this.storage);
+
+          if (this.activeSetupId === id && this.savedSetups.length > 0) {
+            this.loadSetup(this.savedSetups[0]);
+          }
+        },
+
+        // Save last used for persistence
+        saveLastUsed() {
+          this.storage.lastUsed = {
+            peptideId: this.peptideId,
+            vialMg: this.vialMg,
+            waterMl: this.waterMl,
+            syringeSize: this.syringeSize,
+            currentDose: this.currentDose
+          };
+          Storage.save(this.storage);
+        },
+
+        restoreLastUsed() {
+          const lu = this.storage.lastUsed;
+          if (lu) {
+            this.peptideId = lu.peptideId || 'tirzepatide';
+            this.vialMg = lu.vialMg || 10;
+            this.waterMl = lu.waterMl || 2;
+            this.syringeSize = lu.syringeSize || '0.5';
+            this.currentDose = lu.currentDose || 2.5;
+          }
+        },
+
+        // Start new setup from quick mode
+        startNewSetup() {
+          this.mode = 'guided';
+          this.step = 1;
+        },
+
+        // Format helpers
+        fmt(n, decimals = 1) {
+          if (n === null || n === undefined) return '—';
+          const fixed = Number(n).toFixed(decimals);
+          return parseFloat(fixed).toString();
+        },
+
+        fmtConc(n) {
+          if (!n) return '—';
+          // Show nice round number if possible
+          if (n === Math.round(n)) return n.toString();
+          return n.toFixed(1);
+        }
+      };
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+  <div x-data="peptideApp()" x-init="init()" class="min-h-screen">
+
+    <!-- ==================== GUIDED MODE ==================== -->
+    <template x-if="mode === 'guided'">
+      <div class="max-w-xl mx-auto px-4 py-4 md:py-6">
+
+        <!-- Header -->
+        <header class="text-center mb-4">
+          <h1 class="font-display text-2xl md:text-3xl text-stone-800 mb-1">Peptide Calculator</h1>
+          <p class="text-stone-500 text-sm">Set up your dosing</p>
+        </header>
+
+        <!-- Progressive Steps -->
+        <div class="space-y-2">
+
+          <!-- Step 1: Peptide Selection -->
+          <div class="card rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 1 ? 'bg-white' : 'bg-stone-50'">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                     :class="step > 1 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                  <span x-show="step <= 1">1</span>
+                  <svg x-show="step > 1" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="font-medium text-stone-800 text-sm">Peptide</div>
+              </div>
+              <!-- Quick-edit buttons when collapsed -->
+              <div x-show="step > 1" class="flex gap-1.5">
+                <template x-for="p in ['tirzepatide', 'retatrutide', 'other']" :key="p">
+                  <button
+                    @click="selectPeptide(p)"
+                    :class="peptideId === p ? 'active' : ''"
+                    class="pill-btn px-3 py-1 rounded-lg text-xs font-medium"
+                    x-text="PEPTIDES[p].name"
+                  ></button>
+                </template>
+              </div>
+            </div>
+            <div x-show="step === 1" x-collapse class="px-6 pb-6 space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <template x-for="p in ['tirzepatide', 'retatrutide', 'other']" :key="p">
+                  <button
+                    @click="selectPeptide(p)"
+                    :class="peptideId === p ? 'selected' : ''"
+                    class="select-card rounded-xl p-4 text-left"
+                  >
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <div class="font-medium text-stone-800" x-text="PEPTIDES[p].name"></div>
+                        <div class="text-xs text-stone-400 mt-0.5" x-text="PEPTIDES[p].category"></div>
+                      </div>
+                      <div class="select-indicator mt-1"></div>
+                    </div>
+                  </button>
+                </template>
+              </div>
+              <div x-show="peptide.aliases && peptide.aliases.length" class="text-sm text-stone-500 bg-stone-50 rounded-lg p-3">
+                <span class="text-stone-400">Also known as:</span>
+                <span x-text="peptide.aliases.join(', ')"></span>
+              </div>
+              <button @click="step = 2" class="btn-primary w-full py-3 rounded-xl font-medium">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Vial Size -->
+          <div x-show="step >= 2" class="card rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 2 ? 'bg-white' : 'bg-stone-50'">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                     :class="step > 2 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                  <span x-show="step <= 2">2</span>
+                  <svg x-show="step > 2" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="font-medium text-stone-800 text-sm">Vial Size</div>
+              </div>
+              <!-- Quick-edit when collapsed -->
+              <div x-show="step > 2" class="flex items-center gap-2">
+                <div class="flex gap-1">
+                  <template x-for="size in peptide.commonVials" :key="size">
+                    <button
+                      @click="vialMg = size"
+                      :class="vialMg === size ? 'active' : ''"
+                      class="pill-btn px-2 py-1 rounded text-xs font-mono"
+                      x-text="size"
+                    ></button>
+                  </template>
+                </div>
+                <input
+                  type="number"
+                  x-model.number="vialMg"
+                  class="w-14 px-2 py-1 rounded text-xs font-mono text-center border border-stone-200 focus:border-teal-500 focus:outline-none"
+                  :class="!peptide.commonVials.includes(vialMg) ? 'border-teal-500 bg-teal-50' : ''"
+                  min="1"
+                  step="1"
+                >
+                <span class="text-xs text-stone-400">mg</span>
+              </div>
+            </div>
+            <div x-show="step === 2" x-collapse class="px-6 pb-6 space-y-4">
+              <p class="text-sm text-stone-500">Look for the mg amount on the label</p>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="size in peptide.commonVials" :key="size">
+                  <button
+                    @click="vialMg = size"
+                    :class="vialMg === size ? 'active' : ''"
+                    class="pill-btn px-5 py-3 rounded-xl font-mono font-medium"
+                  >
+                    <span x-text="size"></span><span class="text-stone-400 ml-1">mg</span>
+                  </button>
+                </template>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-stone-500">Or enter:</span>
+                <div class="relative">
+                  <input type="number" x-model.number="vialMg" class="input-field w-28 rounded-lg px-4 py-2 font-mono text-center" min="1" step="1">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mg</span>
+                </div>
+              </div>
+              <button @click="step = 3" class="btn-primary w-full py-3 rounded-xl font-medium">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Dose Range -->
+          <div x-show="step >= 3" class="card rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 3 ? 'bg-white' : 'bg-stone-50'">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                     :class="step > 3 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                  <span x-show="step <= 3">3</span>
+                  <svg x-show="step > 3" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="font-medium text-stone-800 text-sm">Dose Range</div>
+              </div>
+              <!-- Quick-edit when collapsed -->
+              <div x-show="step > 3" class="flex gap-1">
+                <template x-for="(range, key) in peptide.doseRanges" :key="key">
+                  <button
+                    @click="applyDoseRange(range)"
+                    :class="doseMin === range.min && doseMax === range.max ? 'active' : ''"
+                    class="pill-btn px-2 py-1 rounded text-xs"
+                    x-text="range.label"
+                  ></button>
+                </template>
+              </div>
+            </div>
+            <div x-show="step === 3" x-collapse class="px-6 pb-6 space-y-4">
+              <p class="text-sm text-stone-500">This helps recommend the right dilution</p>
+              <template x-if="Object.keys(peptide.doseRanges).length > 0">
+                <div class="space-y-2">
+                  <p class="text-xs text-stone-400 uppercase tracking-wide">Common ranges</p>
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="(range, key) in peptide.doseRanges" :key="key">
+                      <button
+                        @click="applyDoseRange(range)"
+                        :class="doseMin === range.min && doseMax === range.max ? 'active' : ''"
+                        class="pill-btn px-4 py-2 rounded-lg text-sm"
+                      >
+                        <span x-text="range.label"></span>
+                        <span class="text-stone-400 ml-1">(<span x-text="range.min"></span>–<span x-text="range.max"></span>mg)</span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <div class="bg-stone-50 rounded-xl p-4">
+                <p class="text-sm text-stone-600 mb-3">My doses will be between:</p>
+                <div class="flex items-center gap-3">
+                  <div class="relative flex-1">
+                    <input type="number" x-model.number="doseMin" class="input-field w-full rounded-lg px-4 py-3 font-mono text-center" min="0.01" step="0.25">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mg</span>
+                  </div>
+                  <span class="text-stone-400">and</span>
+                  <div class="relative flex-1">
+                    <input type="number" x-model.number="doseMax" class="input-field w-full rounded-lg px-4 py-3 font-mono text-center" min="0.01" step="0.25">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mg</span>
+                  </div>
+                </div>
+              </div>
+              <button @click="step = 4; waterMl = recommendation.waterMl" class="btn-primary w-full py-3 rounded-xl font-medium">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Water Amount -->
+          <div x-show="step >= 4" class="card rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 4 ? 'bg-white' : 'bg-stone-50'">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                     :class="step > 4 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                  <span x-show="step <= 4">4</span>
+                  <svg x-show="step > 4" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="font-medium text-stone-800 text-sm">Water Amount</div>
+              </div>
+              <!-- Quick-edit when collapsed -->
+              <div x-show="step > 4" class="flex items-center gap-2">
+                <div class="flex gap-1">
+                  <template x-for="w in [1, 1.5, 2, 2.5, 3]" :key="w">
+                    <button
+                      @click="waterMl = w"
+                      :class="waterMl === w ? 'active' : ''"
+                      class="pill-btn px-2 py-1 rounded text-xs font-mono"
+                      x-text="w"
+                    ></button>
+                  </template>
+                </div>
+                <span class="text-xs text-stone-400">mL</span>
+                <span class="text-xs text-stone-300">→</span>
+                <span class="text-xs font-mono text-teal-600" x-text="fmtConc(vialMg / waterMl) + ' mg/mL'"></span>
+              </div>
+            </div>
+            <div x-show="step === 4" x-collapse class="px-6 pb-6 space-y-4">
+              <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-medium text-teal-800">Recommended:</span>
+                  <span class="font-mono font-semibold text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
+                </div>
+                <p class="text-sm text-teal-700">
+                  This gives you <span class="font-mono font-medium" x-text="fmtConc(recommendation.concentration)"></span> mg/mL.
+                  Your doses will be <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> units.
+                </p>
+              </div>
+              <div>
+                <button @click="showWaterOptions = !showWaterOptions" class="text-sm text-stone-500 hover:text-stone-700 flex items-center gap-1">
+                  <span x-text="showWaterOptions ? 'Hide options' : 'Choose different amount'"></span>
+                  <svg class="w-4 h-4 transition-transform" :class="showWaterOptions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                <div x-show="showWaterOptions" x-collapse class="mt-4 space-y-3">
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="w in [0.5, 1, 1.5, 2, 2.5, 3]" :key="w">
+                      <button @click="waterMl = w" :class="waterMl === w ? 'active' : ''" class="pill-btn px-4 py-2 rounded-lg font-mono">
+                        <span x-text="w"></span> mL
+                      </button>
+                    </template>
+                  </div>
+                  <div class="text-sm text-stone-500">
+                    <span x-text="waterMl + ' mL'"></span> → <span class="font-mono" x-text="fmtConc(vialMg / waterMl)"></span> mg/mL
+                  </div>
+                </div>
+              </div>
+              <button @click="step = 5" class="btn-primary w-full py-3 rounded-xl font-medium">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 5: Syringe -->
+          <div x-show="step >= 5" class="card rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 5 ? 'bg-white' : 'bg-stone-50'">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                     :class="step > 5 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                  <span x-show="step <= 5">5</span>
+                  <svg x-show="step > 5" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="font-medium text-stone-800 text-sm">Syringe Size</div>
+              </div>
+              <!-- Quick toggle in header -->
+              <div class="flex gap-2">
+                <button
+                  @click="syringeSize = '0.5'"
+                  :class="syringeSize === '0.5' ? 'active' : ''"
+                  class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
+                >0.5 mL</button>
+                <button
+                  @click="syringeSize = '1.0'"
+                  :class="syringeSize === '1.0' ? 'active' : ''"
+                  class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
+                >1.0 mL</button>
+              </div>
+            </div>
+            <div x-show="step === 5" x-collapse class="px-6 pb-6 space-y-4">
+              <p class="text-sm text-stone-500">For injections (not reconstitution)</p>
+              <div class="grid grid-cols-2 gap-4">
+                <button
+                  @click="syringeSize = '0.5'"
+                  :class="syringeSize === '0.5' ? 'selected' : ''"
+                  class="select-card rounded-xl p-5 text-center"
+                >
+                  <div class="font-mono text-2xl text-stone-800 mb-1">0.5 mL</div>
+                  <div class="text-sm text-stone-500">50 units</div>
+                  <div class="text-xs text-stone-400 mt-2">Most common</div>
+                  <div class="select-indicator mx-auto mt-3"></div>
+                </button>
+                <button
+                  @click="syringeSize = '1.0'"
+                  :class="syringeSize === '1.0' ? 'selected' : ''"
+                  class="select-card rounded-xl p-5 text-center"
+                >
+                  <div class="font-mono text-2xl text-stone-800 mb-1">1.0 mL</div>
+                  <div class="text-sm text-stone-500">100 units</div>
+                  <div class="text-xs text-stone-400 mt-2">For larger doses</div>
+                  <div class="select-indicator mx-auto mt-3"></div>
+                </button>
+              </div>
+              <button @click="step = 6; currentDose = doseMin" class="btn-primary w-full py-3 rounded-xl font-medium">Calculate</button>
+            </div>
+          </div>
+
+          <!-- Step 6: Result -->
+          <div x-show="step >= 6" class="card rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 flex items-center justify-between bg-teal-500">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-white text-teal-600">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="font-medium text-white text-sm">Your Dose</div>
+              </div>
+            </div>
+            <div class="p-5 space-y-4">
+              <!-- Dose Input + Result Row -->
+              <div class="flex items-stretch gap-3">
+                <!-- Left: Target Dose -->
+                <div class="flex-1 bg-teal-50 rounded-xl p-4 text-center flex flex-col justify-center border-2 border-teal-200 border-dashed">
+                  <div class="text-xs text-teal-600 uppercase tracking-wide mb-1">Target Dose</div>
+                  <div class="flex items-center justify-center gap-2 mb-1">
+                    <button
+                      @click="currentDose = Math.max(0.25, currentDose - 0.5)"
+                      class="w-8 h-8 rounded-full bg-white hover:bg-teal-100 flex items-center justify-center text-teal-600 text-lg font-medium border border-teal-300 shadow-sm"
+                    >−</button>
+                    <div class="flex items-baseline gap-1 bg-white rounded-lg px-3 py-1 border border-teal-300 shadow-sm">
+                      <input
+                        type="number"
+                        x-model.number="currentDose"
+                        class="w-14 text-center font-mono text-3xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                        min="0.1"
+                        step="0.25"
+                        placeholder="2.5"
+                      >
+                      <span class="text-lg text-stone-500">mg</span>
+                    </div>
+                    <button
+                      @click="currentDose = currentDose + 0.5"
+                      class="w-8 h-8 rounded-full bg-white hover:bg-teal-100 flex items-center justify-center text-teal-600 text-lg font-medium border border-teal-300 shadow-sm"
+                    >+</button>
+                  </div>
+                  <div class="text-xs text-teal-500 mb-2">Enter your dose above</div>
+                  <!-- Quick dose buttons -->
+                  <div x-show="peptide.quickDoses && peptide.quickDoses.length" class="flex flex-wrap justify-center gap-1">
+                    <template x-for="d in peptide.quickDoses" :key="d">
+                      <button
+                        @click="currentDose = d"
+                        :class="currentDose === d ? 'bg-teal-500 text-white border-teal-500' : 'bg-white border-teal-200 text-teal-700'"
+                        class="px-2 py-0.5 rounded text-xs font-mono border"
+                        x-text="d"
+                      ></button>
+                    </template>
+                  </div>
+                </div>
+
+                <!-- Right: Result -->
+                <div class="flex-1 bg-stone-100 rounded-xl p-4 text-center flex flex-col justify-center">
+                  <div class="text-xs text-stone-500 uppercase tracking-wide mb-1">Draw</div>
+                  <div class="flex items-baseline justify-center gap-2">
+                    <span class="font-mono font-semibold text-4xl text-stone-800" x-text="fmt(units)"></span>
+                    <span class="text-lg text-stone-500">units</span>
+                  </div>
+                  <div class="text-sm text-stone-400 mt-1">
+                    <span class="font-mono" x-text="fmt(ml, 3)"></span> mL
+                  </div>
+                </div>
+              </div>
+
+              <!-- Warnings -->
+              <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-sm text-amber-800">
+                ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units). Consider splitting the dose.
+              </div>
+              <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-sm text-blue-800">
+                ℹ️ Small volumes (&lt;5 units) can be hard to measure accurately.
+              </div>
+
+              <!-- Syringe Visualization -->
+              <div class="flex justify-center" x-html="syringeSvg"></div>
+
+              <!-- Stats -->
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
+                  <span class="text-stone-400 block text-xs">Concentration</span>
+                  <div class="font-mono text-stone-700 font-medium" x-text="fmtConc(concentration) + ' mg/mL'"></div>
+                </div>
+                <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
+                  <span class="text-stone-400 block text-xs">Doses/vial</span>
+                  <div class="font-mono text-stone-700 font-medium" x-text="dosesPerVial || '—'"></div>
+                </div>
+                <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
+                  <span class="text-stone-400 block text-xs">Syringe</span>
+                  <div class="font-mono text-stone-700 font-medium" x-text="syringeSize + ' mL'"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Skip link -->
+        <div class="text-center mt-4">
+          <button @click="mode = 'advanced'" class="text-xs text-stone-400 hover:text-stone-600">
+            Advanced view →
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ==================== ADVANCED MODE ==================== -->
+    <template x-if="mode === 'advanced'">
+      <div class="max-w-4xl mx-auto px-4 py-6 md:py-8">
+
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-6">
+          <h1 class="font-display text-2xl text-stone-800">Peptide Calculator</h1>
+          <div class="flex items-center gap-3">
+            <button @click="startNewSetup()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+              </svg>
+              Guided Setup
+            </button>
+          </div>
+        </header>
+
+        <!-- Compact All-in-One Card -->
+        <div class="card rounded-2xl overflow-hidden">
+          <div class="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-stone-100">
+
+            <!-- Left: Inputs -->
+            <div class="p-5 md:p-6 space-y-4">
+              <h2 class="text-xs text-stone-400 uppercase tracking-wide font-medium">Configuration</h2>
+
+              <!-- Peptide -->
+              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
+                <label class="text-sm text-stone-500">Peptide</label>
+                <select
+                  x-model="peptideId"
+                  @change="selectPeptide(peptideId)"
+                  class="compact-input rounded-lg px-3 py-2 text-sm font-medium text-stone-700"
+                >
+                  <template x-for="p in Object.keys(PEPTIDES)" :key="p">
+                    <option :value="p" x-text="PEPTIDES[p].name"></option>
+                  </template>
+                </select>
+              </div>
+
+              <!-- Vial mg -->
+              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
+                <label class="text-sm text-stone-500">Vial</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    x-model.number="vialMg"
+                    @input="onVialChange()"
+                    class="compact-input rounded-lg px-3 py-2 w-20 font-mono text-sm text-center"
+                    min="1"
+                    step="1"
+                  >
+                  <span class="text-sm text-stone-400">mg</span>
+                </div>
+              </div>
+
+              <!-- Water -->
+              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
+                <label class="text-sm text-stone-500">Water</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    x-model.number="waterMl"
+                    @input="onWaterManualChange()"
+                    class="compact-input rounded-lg px-3 py-2 w-20 font-mono text-sm text-center"
+                    min="0.1"
+                    step="0.1"
+                  >
+                  <span class="text-sm text-stone-400">mL</span>
+                  <span class="text-stone-300 mx-1">→</span>
+                  <span class="font-mono text-sm text-teal-600" x-text="fmtConc(concentration) + ' mg/mL'"></span>
+                  <button
+                    x-show="waterMl !== recommendedWater"
+                    @click="waterMl = recommendedWater; waterManuallySet = false"
+                    class="text-xs text-teal-600 hover:text-teal-700 underline"
+                    title="Reset to recommended"
+                  >reset</button>
+                </div>
+              </div>
+
+              <!-- Syringe -->
+              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
+                <label class="text-sm text-stone-500">Syringe</label>
+                <div class="flex gap-2">
+                  <button
+                    @click="syringeSize = '0.5'"
+                    :class="syringeSize === '0.5' ? 'active' : ''"
+                    class="pill-btn px-3 py-1.5 rounded-lg text-xs font-mono"
+                  >0.5 mL</button>
+                  <button
+                    @click="syringeSize = '1.0'"
+                    :class="syringeSize === '1.0' ? 'active' : ''"
+                    class="pill-btn px-3 py-1.5 rounded-lg text-xs font-mono"
+                  >1.0 mL</button>
+                </div>
+              </div>
+
+              <div class="border-t border-stone-100 pt-4">
+                <!-- Dose -->
+                <div class="grid grid-cols-[100px_1fr] items-center gap-3">
+                  <label class="text-sm text-stone-600 font-medium">Dose</label>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      x-model.number="currentDose"
+                      class="compact-input rounded-lg px-3 py-2 w-24 font-mono text-lg text-center font-medium"
+                      min="0.01"
+                      step="0.25"
+                    >
+                    <span class="text-sm text-stone-400">mg</span>
+                  </div>
+                </div>
+
+                <!-- Quick Doses -->
+                <div x-show="peptide.quickDoses && peptide.quickDoses.length" class="mt-3 ml-[112px] flex flex-wrap gap-1.5">
+                  <template x-for="d in peptide.quickDoses" :key="d">
+                    <button
+                      @click="currentDose = d"
+                      :class="currentDose === d ? 'active' : ''"
+                      class="pill-btn px-2 py-0.5 rounded text-xs font-mono"
+                      x-text="d"
+                    ></button>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Result -->
+            <div class="p-5 md:p-6 bg-stone-50/50">
+              <h2 class="text-xs text-stone-400 uppercase tracking-wide font-medium mb-4">Result</h2>
+
+              <!-- Warnings -->
+              <div x-show="exceedsSyringe" class="warning-soft rounded-lg p-2.5 mb-4 text-xs">
+                ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span>u)
+              </div>
+              <div x-show="unitsTooSmall && !exceedsSyringe" class="info-soft rounded-lg p-2.5 mb-4 text-xs">
+                ℹ️ Small volume – may be hard to measure
+              </div>
+
+              <!-- Main Number -->
+              <div class="text-center mb-5">
+                <div class="flex items-baseline justify-center gap-2">
+                  <span class="font-mono font-semibold text-5xl md:text-6xl text-stone-800" x-text="fmt(units)"></span>
+                  <span class="text-lg text-stone-500">units</span>
+                  <span class="text-stone-300">=</span>
+                  <span class="font-mono font-semibold text-2xl md:text-3xl text-stone-600" x-text="currentDose"></span>
+                  <span class="text-stone-500">mg</span>
+                </div>
+                <div class="text-sm text-stone-400 mt-2">
+                  <span class="font-mono" x-text="fmt(ml, 3)"></span> mL
+                </div>
+              </div>
+
+              <!-- Syringe -->
+              <div class="flex justify-center mb-4" x-html="syringeSvg"></div>
+
+              <!-- Stats -->
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-white rounded-lg px-3 py-2 border border-stone-100">
+                  <span class="text-stone-400">Concentration</span>
+                  <div class="font-mono text-stone-700 mt-0.5" x-text="fmtConc(concentration) + ' mg/mL'"></div>
+                </div>
+                <div class="bg-white rounded-lg px-3 py-2 border border-stone-100">
+                  <span class="text-stone-400">Doses/vial</span>
+                  <div class="font-mono text-stone-700 mt-0.5" x-text="dosesPerVial || '—'"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-6 text-center text-xs text-stone-400">
+          <p>For reference only. Consult a healthcare provider.</p>
+        </footer>
+      </div>
+    </template>
+
+  </div>
+</body>
+</html>

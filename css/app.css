@@ -1,0 +1,176 @@
+/**
+ * Peptide Calculator - Custom Styles
+ * Additional styling beyond Tailwind utilities
+ */
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Form inputs - consistent styling */
+input[type="number"],
+input[type="text"],
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Focus ring consistency */
+input:focus,
+select:focus,
+button:focus {
+  outline: none;
+  ring: 2px;
+  ring-offset: 2px;
+}
+
+/* Syringe SVG Styles */
+.syringe-svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Liquid fill animation */
+.liquid-fill {
+  transition: width 0.4s ease-out;
+}
+
+/* Smooth transitions for interactive elements */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Card hover effects */
+.bg-white {
+  transition: box-shadow 0.2s ease;
+}
+
+/* Radio button cards - enhanced styling */
+label:has(input[type="radio"]:checked) > div {
+  background-color: #EFF6FF;
+  border-color: #3B82F6;
+}
+
+/* Scrollbar styling for saved configs */
+.max-h-48::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-48::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 3px;
+}
+
+.max-h-48::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+
+.max-h-48::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Modal backdrop blur */
+.bg-black\/50 {
+  backdrop-filter: blur(4px);
+}
+
+/* Button states */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Quick select buttons */
+.px-2.py-0\.5 {
+  transition: all 0.15s ease;
+}
+
+/* Results highlight animation */
+@keyframes pulse-highlight {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.bg-blue-50 {
+  animation: pulse-highlight 2s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  /* Larger touch targets on mobile */
+  button,
+  input,
+  select {
+    min-height: 44px;
+  }
+
+  /* Syringe label adjustment */
+  .text-3xl {
+    font-size: 1.75rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+  }
+
+  .bg-white {
+    box-shadow: none;
+    border: 1px solid #E5E7EB;
+  }
+
+  button {
+    display: none;
+  }
+
+  .max-h-48 {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .border-gray-200 {
+    border-color: #6B7280;
+  }
+
+  .text-gray-500 {
+    color: #374151;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .liquid-fill,
+  .transition-colors,
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
