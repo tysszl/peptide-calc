@@ -1393,25 +1393,25 @@
                 ℹ️ Small volumes (&lt;5 units) can be hard to measure accurately.
               </div>
 
-              <!-- Syringe Size Toggle -->
-              <div class="flex items-center justify-center gap-3">
-                <span class="text-xs text-stone-500">Syringe:</span>
-                <div class="flex gap-1">
-                  <button
-                    @click="syringeSize = '0.5'"
-                    :class="syringeSize === '0.5' ? 'active' : ''"
-                    class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
-                  >0.5 mL</button>
-                  <button
-                    @click="syringeSize = '1.0'"
-                    :class="syringeSize === '1.0' ? 'active' : ''"
-                    class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
-                  >1.0 mL</button>
+              <!-- Syringe Size Toggle + Visualization -->
+              <div class="space-y-1">
+                <div class="flex items-center justify-center gap-3">
+                  <span class="text-xs text-stone-500">Syringe:</span>
+                  <div class="flex gap-1">
+                    <button
+                      @click="syringeSize = '0.5'"
+                      :class="syringeSize === '0.5' ? 'active' : ''"
+                      class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
+                    >0.5 mL</button>
+                    <button
+                      @click="syringeSize = '1.0'"
+                      :class="syringeSize === '1.0' ? 'active' : ''"
+                      class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
+                    >1.0 mL</button>
+                  </div>
                 </div>
+                <div class="flex justify-center" x-html="syringeSvg"></div>
               </div>
-
-              <!-- Syringe Visualization -->
-              <div class="flex justify-center" x-html="syringeSvg"></div>
 
               <!-- Stats -->
               <div class="grid grid-cols-3 gap-2 text-sm">
