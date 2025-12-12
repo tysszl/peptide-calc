@@ -1397,7 +1397,7 @@
                   <div class="text-xs text-teal-600 uppercase tracking-wide mb-1">Target Dose</div>
                   <div class="flex items-center justify-center gap-2 mb-1">
                     <button
-                      @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 100) / 100)"
+                      @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
                       class="w-8 h-8 rounded-full bg-white hover:bg-teal-100 flex items-center justify-center text-teal-600 text-lg font-medium border border-teal-300 shadow-sm"
                     >−</button>
                     <div class="flex items-baseline gap-1 bg-white rounded-lg px-3 py-1 border border-teal-300 shadow-sm">
@@ -1412,7 +1412,7 @@
                       <span class="text-lg text-stone-500">mg</span>
                     </div>
                     <button
-                      @click="currentDose = Math.round((currentDose + 0.25) * 100) / 100"
+                      @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
                       class="w-8 h-8 rounded-full bg-white hover:bg-teal-100 flex items-center justify-center text-teal-600 text-lg font-medium border border-teal-300 shadow-sm"
                     >+</button>
                   </div>
