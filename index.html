@@ -1129,15 +1129,21 @@
                     ></button>
                   </template>
                 </div>
-                <input
-                  type="number"
-                  x-model.number="vialMg"
-                  class="w-14 px-2 py-1 rounded text-xs font-mono text-center border border-stone-200 focus:border-teal-500 focus:outline-none"
-                  :class="!peptide.commonVials.includes(vialMg) ? 'border-teal-500 bg-teal-50' : ''"
-                  min="1"
-                  step="1"
+                <div
+                  class="flex items-center gap-1 px-2 py-1 rounded text-xs"
+                  :class="!peptide.commonVials.includes(vialMg) ? 'bg-teal-500 text-white' : 'bg-stone-100'"
                 >
-                <span class="text-xs text-stone-400">mg</span>
+                  <span x-show="!peptide.commonVials.includes(vialMg)" class="text-teal-100">Custom:</span>
+                  <input
+                    type="number"
+                    x-model.number="vialMg"
+                    class="w-10 bg-transparent font-mono text-center focus:outline-none"
+                    :class="!peptide.commonVials.includes(vialMg) ? 'text-white placeholder-teal-200' : 'text-stone-600'"
+                    min="1"
+                    step="1"
+                  >
+                  <span :class="!peptide.commonVials.includes(vialMg) ? 'text-teal-100' : 'text-stone-400'">mg</span>
+                </div>
               </div>
             </div>
             <div x-show="step === 2" x-collapse class="px-6 pb-6 space-y-4">
