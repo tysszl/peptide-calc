@@ -729,7 +729,7 @@
 
         // Guided setup state
         step: 1,
-        totalSteps: 6,
+        totalSteps: 5,
 
         // Form data
         peptideId: 'tirzepatide',
@@ -937,7 +937,7 @@
             this.doseMax = firstRange.max;
           }
           this.currentDose = p?.defaultDose || 1;
-          this.step = 6;
+          this.step = 5;
         },
 
         // Delete setup
@@ -1314,71 +1314,13 @@
               </div>
               <div class="flex gap-3">
                 <button @click="step = 3" class="btn-secondary flex-1 py-3 rounded-xl font-medium">Back</button>
-                <button @click="step = 5" class="btn-primary flex-[2] py-3 rounded-xl font-medium">Continue</button>
+                <button @click="step = 5; currentDose = doseMin" class="btn-primary flex-[2] py-3 rounded-xl font-medium">Calculate</button>
               </div>
             </div>
           </div>
 
-          <!-- Step 5: Syringe -->
+          <!-- Step 5: Result -->
           <div x-show="step >= 5" class="card rounded-xl overflow-hidden">
-            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 5 ? 'bg-white' : 'bg-stone-50'">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                     :class="step > 5 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
-                  <span x-show="step <= 5">5</span>
-                  <svg x-show="step > 5" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <div class="font-medium text-stone-800 text-sm">Syringe Size</div>
-              </div>
-              <!-- Quick toggle in header -->
-              <div class="flex gap-2">
-                <button
-                  @click="syringeSize = '0.5'"
-                  :class="syringeSize === '0.5' ? 'active' : ''"
-                  class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
-                >0.5 mL</button>
-                <button
-                  @click="syringeSize = '1.0'"
-                  :class="syringeSize === '1.0' ? 'active' : ''"
-                  class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
-                >1.0 mL</button>
-              </div>
-            </div>
-            <div x-show="step === 5" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">Choose the insulin syringe you'll use for injections</p>
-              <div class="grid grid-cols-2 gap-4">
-                <button
-                  @click="syringeSize = '0.5'"
-                  :class="syringeSize === '0.5' ? 'selected' : ''"
-                  class="select-card rounded-xl p-5 text-center"
-                >
-                  <div class="font-mono text-2xl text-stone-800 mb-1">0.5 mL</div>
-                  <div class="text-sm text-stone-500">50 units</div>
-                  <div class="text-xs text-stone-400 mt-2">Most common</div>
-                  <div class="select-indicator mx-auto mt-3"></div>
-                </button>
-                <button
-                  @click="syringeSize = '1.0'"
-                  :class="syringeSize === '1.0' ? 'selected' : ''"
-                  class="select-card rounded-xl p-5 text-center"
-                >
-                  <div class="font-mono text-2xl text-stone-800 mb-1">1.0 mL</div>
-                  <div class="text-sm text-stone-500">100 units</div>
-                  <div class="text-xs text-stone-400 mt-2">For larger doses</div>
-                  <div class="select-indicator mx-auto mt-3"></div>
-                </button>
-              </div>
-              <div class="flex gap-3">
-                <button @click="step = 4" class="btn-secondary flex-1 py-3 rounded-xl font-medium">Back</button>
-                <button @click="step = 6; currentDose = doseMin" class="btn-primary flex-[2] py-3 rounded-xl font-medium">Calculate</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 6: Result -->
-          <div x-show="step >= 6" class="card rounded-xl overflow-hidden">
             <div class="px-4 py-2.5 flex items-center justify-between bg-teal-500">
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-white text-teal-600">
@@ -1449,6 +1391,23 @@
               </div>
               <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-sm text-blue-800">
                 ℹ️ Small volumes (&lt;5 units) can be hard to measure accurately.
+              </div>
+
+              <!-- Syringe Size Toggle -->
+              <div class="flex items-center justify-center gap-3">
+                <span class="text-xs text-stone-500">Syringe:</span>
+                <div class="flex gap-1">
+                  <button
+                    @click="syringeSize = '0.5'"
+                    :class="syringeSize === '0.5' ? 'active' : ''"
+                    class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
+                  >0.5 mL</button>
+                  <button
+                    @click="syringeSize = '1.0'"
+                    :class="syringeSize === '1.0' ? 'active' : ''"
+                    class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
+                  >1.0 mL</button>
+                </div>
               </div>
 
               <!-- Syringe Visualization -->
