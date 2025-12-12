@@ -1129,13 +1129,15 @@
                   ></button>
                 </template>
                 <label
-                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1"
+                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1 group"
                   :class="!peptide.commonVials.includes(vialMg) ? 'active' : ''"
+                  title="Click to edit"
                 >
                   <input
                     type="number"
                     x-model.number="vialMg"
-                    class="w-8 bg-transparent font-mono text-center focus:outline-none"
+                    class="w-8 bg-transparent font-mono text-center focus:outline-none border-b border-dashed"
+                    :class="!peptide.commonVials.includes(vialMg) ? 'border-white/50' : 'border-stone-300'"
                     min="1"
                     step="1"
                     placeholder="?"
@@ -1260,13 +1262,15 @@
                   ></button>
                 </template>
                 <label
-                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1"
+                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1 group"
                   :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'active' : ''"
+                  title="Click to edit"
                 >
                   <input
                     type="number"
                     x-model.number="waterMl"
-                    class="w-8 bg-transparent font-mono text-center focus:outline-none"
+                    class="w-8 bg-transparent font-mono text-center focus:outline-none border-b border-dashed"
+                    :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'border-white/50' : 'border-stone-300'"
                     min="0.1"
                     step="0.1"
                     placeholder="?"
