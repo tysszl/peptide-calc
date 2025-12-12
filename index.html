@@ -1080,6 +1080,7 @@
               </div>
             </div>
             <div x-show="step === 1" x-collapse class="px-6 pb-6 space-y-4">
+              <p class="text-sm text-stone-500">Select the peptide you're using</p>
               <div class="grid grid-cols-2 gap-3">
                 <template x-for="p in ['tirzepatide', 'retatrutide', 'other']" :key="p">
                   <button
@@ -1147,7 +1148,7 @@
               </div>
             </div>
             <div x-show="step === 2" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">Look for the mg amount on the label</p>
+              <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
               <div class="flex flex-wrap gap-2">
                 <template x-for="size in peptide.commonVials" :key="size">
                   <button
@@ -1199,7 +1200,7 @@
               </div>
             </div>
             <div x-show="step === 3" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">This helps recommend the right dilution</p>
+              <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
               <template x-if="Object.keys(peptide.doseRanges).length > 0">
                 <div class="space-y-2">
                   <p class="text-xs text-stone-400 uppercase tracking-wide">Common ranges</p>
@@ -1346,7 +1347,7 @@
               </div>
             </div>
             <div x-show="step === 5" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">For injections (not reconstitution)</p>
+              <p class="text-sm text-stone-500">Choose the insulin syringe you'll use for injections</p>
               <div class="grid grid-cols-2 gap-4">
                 <button
                   @click="syringeSize = '0.5'"
