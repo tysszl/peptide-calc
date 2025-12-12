@@ -1250,20 +1250,29 @@
                 <div class="font-medium text-stone-800 text-sm tooltip" data-tip="Bacteriostatic water (BAC) used to reconstitute the powder">Water Amount</div>
               </div>
               <!-- Quick-edit when collapsed -->
-              <div x-show="step > 4" class="flex items-center gap-2">
-                <div class="flex gap-1">
-                  <template x-for="w in [1, 1.5, 2, 2.5, 3]" :key="w">
-                    <button
-                      @click="waterMl = w"
-                      :class="waterMl === w ? 'active' : ''"
-                      class="pill-btn px-2 py-1 rounded text-xs font-mono"
-                      x-text="w"
-                    ></button>
-                  </template>
-                </div>
-                <span class="text-xs text-stone-400">mL</span>
-                <span class="text-xs text-stone-300">→</span>
-                <span class="text-xs font-mono text-teal-600" x-text="fmtConc(vialMg / waterMl) + ' mg/mL'"></span>
+              <div x-show="step > 4" class="flex items-center gap-1">
+                <template x-for="w in [1, 1.5, 2, 2.5, 3]" :key="w">
+                  <button
+                    @click="waterMl = w"
+                    :class="waterMl === w ? 'active' : ''"
+                    class="pill-btn px-2 py-1 rounded text-xs font-mono"
+                    x-text="w"
+                  ></button>
+                </template>
+                <label
+                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1"
+                  :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'active' : ''"
+                >
+                  <input
+                    type="number"
+                    x-model.number="waterMl"
+                    class="w-8 bg-transparent font-mono text-center focus:outline-none"
+                    min="0.1"
+                    step="0.1"
+                    placeholder="?"
+                  >
+                  <span class="text-stone-400">mL</span>
+                </label>
               </div>
             </div>
             <div x-show="step === 4" x-collapse class="px-6 pb-6 space-y-4">
