@@ -1140,7 +1140,7 @@
                     step="1"
                     placeholder="?"
                   >
-                  <span class="text-stone-400">mg</span>
+                  <span :class="!peptide.commonVials.includes(vialMg) ? 'text-white/70' : 'text-stone-400'">mg</span>
                 </label>
               </div>
             </div>
@@ -1271,7 +1271,7 @@
                     step="0.1"
                     placeholder="?"
                   >
-                  <span class="text-stone-400">mL</span>
+                  <span :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'text-white/70' : 'text-stone-400'">mL</span>
                 </label>
               </div>
             </div>
