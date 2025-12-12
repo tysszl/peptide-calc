@@ -1238,7 +1238,7 @@
             </div>
           </div>
 
-          <!-- Step 4: Water Amount -->
+          <!-- Step 4: Bacteriostatic Water -->
           <div x-show="step >= 4" class="card rounded-xl overflow-hidden">
             <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 4 ? 'bg-white' : 'bg-stone-50'">
               <div class="flex items-center gap-2">
@@ -1249,7 +1249,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                   </svg>
                 </div>
-                <div class="font-medium text-stone-800 text-sm tooltip" data-tip="Bacteriostatic water (BAC) used to reconstitute the powder">Water Amount</div>
+                <div class="font-medium text-stone-800 text-sm">Bacteriostatic (BAC) Water</div>
               </div>
               <!-- Quick-edit when collapsed -->
               <div x-show="step > 4" class="flex items-center gap-1">
@@ -1552,7 +1552,7 @@
 
               <!-- Water -->
               <div class="grid grid-cols-[100px_1fr] items-center gap-3">
-                <label class="text-sm text-stone-500 tooltip" data-tip="BAC water to reconstitute">Water</label>
+                <label class="text-sm text-stone-500">BAC Water</label>
                 <div class="flex items-center gap-2">
                   <input
                     type="number"
