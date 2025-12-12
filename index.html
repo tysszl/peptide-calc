@@ -273,9 +273,10 @@
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2378716C'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 16px;
-      padding-right: 40px;
+      background-position: right 6px center;
+      background-size: 14px;
+      padding-right: 28px !important;
+      cursor: pointer;
     }
 
     /* Scrollbar */
@@ -546,19 +547,20 @@
     // ============================================
     function generateSyringe(syringeSize, fillUnits, maxUnits) {
       const totalUnits = syringeSize === '0.5' ? 50 : 100;
-      const majorTick = syringeSize === '0.5' ? 10 : 20;
-      const minorTick = syringeSize === '0.5' ? 5 : 10;
+      const majorTick = 10; // Labels at every 10 units for both syringe sizes
+      const minorTick = syringeSize === '0.5' ? 5 : 5;
       const clampedUnits = Math.min(Math.max(fillUnits || 0, 0), totalUnits);
       const fillPct = (clampedUnits / totalUnits) * 100;
 
       const width = 340;
       const height = 85;
-      const barrelX = 60;
+      const barrelX = 50;   // Connects directly with needle hub
       const barrelY = 30;
-      const barrelW = 220;  // Wider barrel to fill more space
+      const barrelW = 220;  // Barrel width adjusted for new layout
       const barrelH = 20;
 
       // Generate tick marks ON the barrel (like real syringes)
+      // Numbers count UP from left to right: 0 at plunger, max at needle
       let ticks = '';
       const unitW = barrelW / totalUnits;
       for (let i = 0; i <= totalUnits; i++) {
@@ -571,22 +573,20 @@
         // Ticks on barrel (from bottom edge going up)
         ticks += `<line x1="${x}" y1="${barrelY + barrelH}" x2="${x}" y2="${barrelY + barrelH - tickH}" stroke="#1a1a1a" stroke-width="${strokeW}"/>`;
 
-        // Labels for major ticks (numbers count DOWN: max at plunger, 0 at needle)
+        // Labels for major ticks (numbers count UP: 0 at plunger, max at needle)
         if (isMajor) {
-          const label = totalUnits - i; // 50 at plunger (left), 0 at needle (right)
+          const label = i; // 0 at plunger (left), 50/100 at needle (right)
           ticks += `<text x="${x}" y="${barrelY + barrelH + 12}" text-anchor="middle" fill="#1a1a1a" font-size="8" font-family="JetBrains Mono, monospace" font-weight="600">${label}</text>`;
         }
       }
 
       // Fill calculation:
-      // Numbers count DOWN from left to right (50 at plunger, 0 at needle)
-      // So 12.5 units = liquid from the "0" end back to the "12.5" mark
+      // Numbers count UP from left to right (0 at plunger, max at needle)
+      // Liquid fills from left (plunger) towards right (needle)
       // The indicator shows where to draw TO (reading the number on the barrel)
-      // Liquid starts at the needle end (right) and extends left by fillPct
       const fillW = (fillPct / 100) * barrelW;
-      // Indicator position: for 12.5 units on a 50-unit syringe, indicator is at 12.5/50 = 25% from the RIGHT
-      // Which means 75% from the LEFT
-      const indicatorX = barrelX + barrelW - fillW;
+      // Indicator position: for 12.5 units on a 50-unit syringe, indicator is at 12.5/50 = 25% from the LEFT
+      const indicatorX = barrelX + fillW;
       const exceedsSyringe = fillUnits > totalUnits;
 
       return `
@@ -664,16 +664,25 @@
             </clipPath>
           </defs>
 
-          <!-- ORANGE PLUNGER CAP (left end) -->
-          <rect x="2" y="${barrelY - 6}" width="28" height="${barrelH + 12}" rx="3" fill="url(#orangeCap)" stroke="#E65100" stroke-width="0.5"/>
-          <!-- Cap end detail -->
-          <ellipse cx="4" cy="${barrelY + barrelH/2}" rx="2" ry="${barrelH/2 + 4}" fill="url(#orangeCapEnd)"/>
+          <!-- NEEDLE TIP (left side, angled bevel) -->
+          <path d="M2 ${barrelY + barrelH/2 + 1}
+                   L10 ${barrelY + barrelH/2 - 0.75}
+                   L10 ${barrelY + barrelH/2 + 0.75}
+                   Z" fill="#757575"/>
 
-          <!-- PLUNGER ROD (white/gray) -->
-          <rect x="30" y="${barrelY + 3}" width="30" height="${barrelH - 6}" rx="2" fill="url(#plungerRod)" stroke="#BDBDBD" stroke-width="0.5"/>
+          <!-- NEEDLE (metal) -->
+          <line x1="10" y1="${barrelY + barrelH/2}" x2="37" y2="${barrelY + barrelH/2}" stroke="#9E9E9E" stroke-width="1.5" stroke-linecap="round"/>
 
-          <!-- BLACK RUBBER GASKET (inside barrel at plunger position) -->
-          <rect x="${barrelX}" y="${barrelY + 1}" width="5" height="${barrelH - 2}" rx="1" fill="url(#rubberGasket)"/>
+          <!-- NEEDLE HUB (clear/white tapered) -->
+          <path d="M37 ${barrelY + barrelH/2 - 1}
+                   L50 ${barrelY + 4}
+                   L50 ${barrelY + barrelH - 4}
+                   L37 ${barrelY + barrelH/2 + 1}
+                   Z" fill="url(#needleHub)" stroke="#BDBDBD" stroke-width="0.5"/>
+
+          <!-- FINGER FLANGES (at needle end of barrel) -->
+          <rect x="${barrelX - 3}" y="${barrelY - 6}" width="8" height="6" rx="1" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="0.5"/>
+          <rect x="${barrelX - 3}" y="${barrelY + barrelH}" width="8" height="6" rx="1" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="0.5"/>
 
           <!-- BARREL (clear glass/plastic) -->
           <rect x="${barrelX}" y="${barrelY}" width="${barrelW}" height="${barrelH}" rx="3" fill="url(#barrelGlass)" stroke="#BDBDBD" stroke-width="1"/>
@@ -681,31 +690,23 @@
           <!-- Barrel highlight -->
           <rect x="${barrelX + 2}" y="${barrelY + 2}" width="${barrelW - 4}" height="5" rx="2" fill="rgba(255,255,255,0.6)"/>
 
-          <!-- LIQUID FILL (from indicator position to needle end on the RIGHT side) -->
+          <!-- LIQUID FILL (from needle on LEFT to indicator position) -->
           ${fillPct > 0 ? `
             <g clip-path="url(#barrelClip)">
-              <rect x="${indicatorX}" y="${barrelY + 2}" width="${fillW}" height="${barrelH - 4}" fill="url(#${exceedsSyringe ? 'liquidWarn' : 'liquid'})" class="syringe-liquid"/>
+              <rect x="${barrelX}" y="${barrelY + 2}" width="${fillW}" height="${barrelH - 4}" fill="url(#${exceedsSyringe ? 'liquidWarn' : 'liquid'})" class="syringe-liquid"/>
             </g>
           ` : ''}
 
-          <!-- FINGER FLANGES (at needle end of barrel) -->
-          <rect x="${barrelX + barrelW - 3}" y="${barrelY - 6}" width="8" height="6" rx="1" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="0.5"/>
-          <rect x="${barrelX + barrelW - 3}" y="${barrelY + barrelH}" width="8" height="6" rx="1" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="0.5"/>
+          <!-- BLACK RUBBER GASKET (inside barrel at plunger position - right side) -->
+          <rect x="${barrelX + barrelW - 6}" y="${barrelY + 1}" width="6" height="${barrelH - 2}" rx="1" fill="url(#rubberGasket)"/>
 
-          <!-- NEEDLE HUB (clear/white tapered) - shorter -->
-          <path d="M${barrelX + barrelW + 3} ${barrelY + 4}
-                   L${barrelX + barrelW + 15} ${barrelY + barrelH/2 - 1}
-                   L${barrelX + barrelW + 15} ${barrelY + barrelH/2 + 1}
-                   L${barrelX + barrelW + 3} ${barrelY + barrelH - 4}
-                   Z" fill="url(#needleHub)" stroke="#BDBDBD" stroke-width="0.5"/>
+          <!-- PLUNGER ROD (white/gray) -->
+          <rect x="${barrelX + barrelW + 2}" y="${barrelY + 3}" width="25" height="${barrelH - 6}" rx="2" fill="url(#plungerRod)" stroke="#BDBDBD" stroke-width="0.5"/>
 
-          <!-- NEEDLE (metal, shorter with tapered point) -->
-          <line x1="${barrelX + barrelW + 15}" y1="${barrelY + barrelH/2}" x2="${barrelX + barrelW + 42}" y2="${barrelY + barrelH/2}" stroke="#9E9E9E" stroke-width="1.5" stroke-linecap="round"/>
-          <!-- Needle tip (angled bevel like real needles) -->
-          <path d="M${barrelX + barrelW + 42} ${barrelY + barrelH/2 - 0.75}
-                   L${barrelX + barrelW + 50} ${barrelY + barrelH/2 + 1}
-                   L${barrelX + barrelW + 42} ${barrelY + barrelH/2 + 0.75}
-                   Z" fill="#757575"/>
+          <!-- ORANGE PLUNGER CAP (right end) -->
+          <rect x="${barrelX + barrelW + 27}" y="${barrelY - 6}" width="26" height="${barrelH + 12}" rx="3" fill="url(#orangeCap)" stroke="#E65100" stroke-width="0.5"/>
+          <!-- Cap end detail -->
+          <ellipse cx="${barrelX + barrelW + 51}" cy="${barrelY + barrelH/2}" rx="2" ry="${barrelH/2 + 4}" fill="url(#orangeCapEnd)"/>
 
           <!-- TICK MARKS (on barrel) -->
           ${ticks}
@@ -733,6 +734,7 @@
 
         // Form data
         peptideId: 'tirzepatide',
+        customPeptideName: '',
         vialMg: 10,
         doseMin: 2.5,
         doseMax: 5,
@@ -837,6 +839,22 @@
               this.waterMl = this.recommendedWater;
               this.waterManuallySet = false;
             }
+          }
+        },
+
+        // Handle combo-box peptide input (Quick mode)
+        handlePeptideInput(value) {
+          // Check if input matches a known peptide name
+          const match = Object.entries(PEPTIDES).find(([id, p]) =>
+            p.name.toLowerCase() === value.toLowerCase()
+          );
+
+          if (match) {
+            this.selectPeptide(match[0]);
+          } else {
+            // Custom peptide
+            this.peptideId = 'other';
+            this.customPeptideName = value;
           }
         },
 
@@ -1101,6 +1119,15 @@
               <div x-show="peptide.aliases && peptide.aliases.length" class="text-sm text-stone-500 bg-stone-50 rounded-lg p-3">
                 <span class="text-stone-400">Also known as:</span>
                 <span x-text="peptide.aliases.join(', ')"></span>
+              </div>
+              <div x-show="peptideId === 'other'" class="flex items-center gap-2">
+                <label class="text-sm text-stone-500">Name:</label>
+                <input
+                  type="text"
+                  x-model="customPeptideName"
+                  placeholder="Enter peptide name"
+                  class="flex-1 input-field rounded-lg px-3 py-2 text-sm"
+                >
               </div>
               <button @click="step = 2" class="btn-primary w-full py-3 rounded-xl font-medium">Continue</button>
             </div>
@@ -1458,10 +1485,10 @@
 
     <!-- ==================== QUICK CALCULATOR MODE ==================== -->
     <template x-if="mode === 'quick'">
-      <div class="max-w-4xl mx-auto px-4 py-6 md:py-8">
+      <div class="max-w-xl mx-auto px-4 py-4 md:py-6">
 
         <!-- Header with Mode Toggle -->
-        <header class="flex items-center justify-between mb-4">
+        <header class="flex items-center justify-between mb-3">
           <h1 class="font-display text-xl text-stone-800">Peptide Calculator</h1>
           <div class="inline-flex bg-stone-100 rounded-lg p-0.5">
             <button @click="startNewSetup()" class="px-3 py-1 rounded-md text-xs font-medium text-stone-500 hover:text-stone-700">
@@ -1473,163 +1500,124 @@
           </div>
         </header>
 
-        <!-- Compact All-in-One Card -->
-        <div class="card rounded-2xl overflow-hidden">
-          <div class="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-stone-100">
-
-            <!-- Left: Inputs -->
-            <div class="p-5 md:p-6 space-y-4">
-              <h2 class="text-xs text-stone-400 uppercase tracking-wide font-medium">Configuration</h2>
-
-              <!-- Peptide -->
-              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
-                <label class="text-sm text-stone-500">Peptide</label>
-                <select
-                  x-model="peptideId"
-                  @change="selectPeptide(peptideId)"
-                  class="compact-input rounded-lg px-3 py-2 text-sm font-medium text-stone-700"
-                >
-                  <template x-for="p in Object.keys(PEPTIDES)" :key="p">
-                    <option :value="p" x-text="PEPTIDES[p].name"></option>
-                  </template>
-                </select>
-              </div>
-
-              <!-- Vial mg -->
-              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
-                <label class="text-sm text-stone-500">Vial</label>
-                <div class="flex items-center gap-2">
+        <!-- Unified Calculator Card -->
+        <div class="card rounded-xl overflow-hidden">
+          <!-- Config Row -->
+          <div class="px-4 py-2.5 bg-stone-50 border-b border-stone-100 overflow-x-auto">
+            <div class="flex items-center gap-4 text-sm whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span class="text-stone-500">Peptide</span>
+                <div class="relative">
                   <input
-                    type="number"
-                    x-model.number="vialMg"
-                    @input="onVialChange()"
-                    class="compact-input rounded-lg px-3 py-2 w-20 font-mono text-sm text-center"
-                    min="1"
-                    step="1"
+                    type="text"
+                    list="peptide-list"
+                    :value="peptideId === 'other' ? customPeptideName : PEPTIDES[peptideId]?.name"
+                    @input="handlePeptideInput($event.target.value)"
+                    @change="handlePeptideInput($event.target.value)"
+                    placeholder="Select or type..."
+                    class="bg-white border border-stone-200 rounded px-3 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-36"
                   >
-                  <span class="text-sm text-stone-400">mg</span>
+                  <datalist id="peptide-list">
+                    <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
+                      <option :value="PEPTIDES[p].name"></option>
+                    </template>
+                  </datalist>
                 </div>
               </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-stone-500">Vial</span>
+                <input type="number" x-model.number="vialMg" @input="onVialChange()"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-16 font-mono text-center focus:outline-none focus:border-teal-400" min="1" step="1">
+                <span class="text-stone-500">mg</span>
+              </div>
+              <div class="flex items-center gap-1.5 whitespace-nowrap">
+                <span class="text-stone-500">Water</span>
+                <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
+                <span class="text-stone-500">mL</span>
+              </div>
+            </div>
+          </div>
 
-              <!-- Water -->
-              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
-                <label class="text-sm text-stone-500">BAC Water</label>
+          <!-- Main Calculator -->
+          <div class="px-4 py-3 space-y-3">
+            <!-- Dose Row -->
+            <div class="flex items-center justify-center gap-4">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs text-stone-400 uppercase tracking-wide">Target Dose</span>
                 <div class="flex items-center gap-2">
-                  <input
-                    type="number"
-                    x-model.number="waterMl"
-                    @input="onWaterManualChange()"
-                    class="compact-input rounded-lg px-3 py-2 w-20 font-mono text-sm text-center"
-                    min="0.1"
-                    step="0.1"
-                  >
-                  <span class="text-sm text-stone-400">mL</span>
-                  <span class="text-stone-300 mx-1">→</span>
-                  <span class="font-mono text-sm text-teal-600" x-text="fmtConc(concentration) + ' mg/mL'"></span>
-                  <button
-                    x-show="waterMl !== recommendedWater"
-                    @click="waterMl = recommendedWater; waterManuallySet = false"
-                    class="text-xs text-teal-600 hover:text-teal-700 underline"
-                    title="Reset to recommended"
-                  >reset</button>
-                </div>
-              </div>
-
-              <!-- Syringe -->
-              <div class="grid grid-cols-[100px_1fr] items-center gap-3">
-                <label class="text-sm text-stone-500">Syringe</label>
-                <div class="flex gap-2">
-                  <button
-                    @click="syringeSize = '0.5'"
-                    :class="syringeSize === '0.5' ? 'active' : ''"
-                    class="pill-btn px-3 py-1.5 rounded-lg text-xs font-mono"
-                  >0.5 mL</button>
-                  <button
-                    @click="syringeSize = '1.0'"
-                    :class="syringeSize === '1.0' ? 'active' : ''"
-                    class="pill-btn px-3 py-1.5 rounded-lg text-xs font-mono"
-                  >1.0 mL</button>
-                </div>
-              </div>
-
-              <div class="border-t border-stone-100 pt-4">
-                <!-- Dose -->
-                <div class="grid grid-cols-[100px_1fr] items-center gap-3">
-                  <label class="text-sm text-stone-600 font-medium">Dose</label>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="number"
-                      x-model.number="currentDose"
-                      class="compact-input rounded-lg px-3 py-2 w-24 font-mono text-lg text-center font-medium"
-                      min="0.01"
-                      step="0.25"
-                    >
+                  <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
+                    class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
+                  <div class="flex items-baseline gap-1 bg-white border border-stone-200 rounded-lg px-3 py-1.5 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+                    <input type="number" x-model.number="currentDose"
+                      class="w-14 text-center font-mono text-2xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                      min="0.01" step="any" placeholder="2.5">
                     <span class="text-sm text-stone-400">mg</span>
                   </div>
+                  <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
+                    class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
                 </div>
+              </div>
 
-                <!-- Quick Doses -->
-                <div x-show="peptide.quickDoses && peptide.quickDoses.length" class="mt-3 ml-[112px] flex flex-wrap gap-1.5">
-                  <template x-for="d in peptide.quickDoses" :key="d">
-                    <button
-                      @click="currentDose = d"
-                      :class="currentDose === d ? 'active' : ''"
-                      class="pill-btn px-2 py-0.5 rounded text-xs font-mono"
-                      x-text="d"
-                    ></button>
-                  </template>
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs text-stone-400 uppercase tracking-wide">Draw</span>
+                <div class="flex items-center gap-3 bg-stone-100 rounded-lg px-4 py-2">
+                  <span class="text-stone-400">=</span>
+                  <div class="flex items-baseline gap-1.5">
+                    <span class="font-mono font-bold text-2xl text-teal-600" x-text="fmt(units)"></span>
+                    <span class="text-sm text-stone-600">units</span>
+                  </div>
+                  <span class="text-stone-400 text-sm">(<span class="font-mono" x-text="fmt(ml, 3)"></span> mL)</span>
                 </div>
               </div>
             </div>
 
-            <!-- Right: Result -->
-            <div class="p-5 md:p-6 bg-stone-50/50">
-              <h2 class="text-xs text-stone-400 uppercase tracking-wide font-medium mb-4">Result</h2>
+            <!-- Quick Doses -->
+            <div x-show="peptide.quickDoses && peptide.quickDoses.length" class="flex flex-wrap justify-center gap-1.5">
+              <template x-for="d in peptide.quickDoses" :key="d">
+                <button @click="currentDose = d"
+                  :class="currentDose === d ? 'bg-teal-500 text-white border-teal-500' : 'bg-white border-stone-200 text-stone-600 hover:border-teal-400'"
+                  class="px-2.5 py-0.5 rounded-full text-xs font-mono border transition-colors"
+                  x-text="d + ' mg'"></button>
+              </template>
+            </div>
 
-              <!-- Warnings -->
-              <div x-show="exceedsSyringe" class="warning-soft rounded-lg p-2.5 mb-4 text-xs">
-                ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span>u)
+            <!-- Warnings -->
+            <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800 text-center">
+              ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units)
+            </div>
+            <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800 text-center">
+              ℹ️ Small volume – may be hard to measure accurately
+            </div>
+
+            <!-- Syringe -->
+            <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-4 py-2.5 bg-stone-50 border-t border-stone-100 flex items-start justify-between">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs text-stone-400">Syringe</span>
+              <div class="flex">
+                <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                  class="px-2.5 py-1 rounded-l border font-mono text-xs transition-colors">0.5 mL</button>
+                <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                  class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
               </div>
-              <div x-show="unitsTooSmall && !exceedsSyringe" class="info-soft rounded-lg p-2.5 mb-4 text-xs">
-                ℹ️ Small volume – may be hard to measure
+            </div>
+            <div class="flex items-start gap-6">
+              <div class="flex flex-col gap-1 text-center">
+                <span class="text-xs text-stone-400">Concentration</span>
+                <span class="font-mono font-medium text-stone-700" x-text="fmtConc(concentration) + ' mg/mL'"></span>
               </div>
-
-              <!-- Main Number -->
-              <div class="text-center mb-5">
-                <div class="flex items-baseline justify-center gap-2">
-                  <span class="font-mono font-semibold text-5xl md:text-6xl text-stone-800" x-text="fmt(units)"></span>
-                  <span class="text-lg text-stone-500 tooltip" data-tip="Marks on your insulin syringe">units</span>
-                  <span class="text-stone-300">=</span>
-                  <span class="font-mono font-semibold text-2xl md:text-3xl text-stone-600" x-text="currentDose"></span>
-                  <span class="text-stone-500">mg</span>
-                </div>
-                <div class="text-sm text-stone-400 mt-2">
-                  <span class="font-mono" x-text="fmt(ml, 3)"></span> mL
-                </div>
-              </div>
-
-              <!-- Syringe -->
-              <div class="flex justify-center mb-4" x-html="syringeSvg"></div>
-
-              <!-- Stats -->
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="bg-white rounded-lg px-3 py-2 border border-stone-100">
-                  <span class="text-stone-400 tooltip" data-tip="mg of peptide per mL of solution">Concentration</span>
-                  <div class="font-mono text-stone-700 mt-0.5" x-text="fmtConc(concentration) + ' mg/mL'"></div>
-                </div>
-                <div class="bg-white rounded-lg px-3 py-2 border border-stone-100">
-                  <span class="text-stone-400 tooltip" data-tip="How many doses at this amount per vial">Doses/vial</span>
-                  <div class="font-mono text-stone-700 mt-0.5" x-text="dosesPerVial || '—'"></div>
-                </div>
+              <div class="flex flex-col gap-1 text-center">
+                <span class="text-xs text-stone-400">Doses/Vial</span>
+                <span class="font-mono font-medium text-stone-700" x-text="dosesPerVial || '—'"></span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Footer -->
-        <footer class="mt-6 text-center text-xs text-stone-400">
-          <p>For reference only. Consult a healthcare provider.</p>
-        </footer>
       </div>
     </template>
 
