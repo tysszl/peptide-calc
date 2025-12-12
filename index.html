@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Peptide Calculator</title>
   <meta name="description" content="Simple peptide reconstitution and dosing calculator. Get the right units every time.">
+  <meta name="robots" content="noindex, nofollow">
 
   <!-- Fonts: Fraunces (elegant serif), Outfit (friendly sans), JetBrains Mono (precise numbers) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1118,32 +1119,29 @@
                 <div class="font-medium text-stone-800 text-sm">Vial Size</div>
               </div>
               <!-- Quick-edit when collapsed -->
-              <div x-show="step > 2" class="flex items-center gap-2">
-                <div class="flex gap-1">
-                  <template x-for="size in peptide.commonVials" :key="size">
-                    <button
-                      @click="vialMg = size"
-                      :class="vialMg === size ? 'active' : ''"
-                      class="pill-btn px-2 py-1 rounded text-xs font-mono"
-                      x-text="size"
-                    ></button>
-                  </template>
-                </div>
-                <div
-                  class="flex items-center gap-1 px-2 py-1 rounded text-xs"
-                  :class="!peptide.commonVials.includes(vialMg) ? 'bg-teal-500 text-white' : 'bg-stone-100'"
+              <div x-show="step > 2" class="flex items-center gap-1">
+                <template x-for="size in peptide.commonVials" :key="size">
+                  <button
+                    @click="vialMg = size"
+                    :class="vialMg === size ? 'active' : ''"
+                    class="pill-btn px-2 py-1 rounded text-xs font-mono"
+                    x-text="size"
+                  ></button>
+                </template>
+                <label
+                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1"
+                  :class="!peptide.commonVials.includes(vialMg) ? 'active' : ''"
                 >
-                  <span x-show="!peptide.commonVials.includes(vialMg)" class="text-teal-100">Custom:</span>
                   <input
                     type="number"
                     x-model.number="vialMg"
-                    class="w-10 bg-transparent font-mono text-center focus:outline-none"
-                    :class="!peptide.commonVials.includes(vialMg) ? 'text-white placeholder-teal-200' : 'text-stone-600'"
+                    class="w-8 bg-transparent font-mono text-center focus:outline-none"
                     min="1"
                     step="1"
+                    placeholder="?"
                   >
-                  <span :class="!peptide.commonVials.includes(vialMg) ? 'text-teal-100' : 'text-stone-400'">mg</span>
-                </div>
+                  <span class="text-stone-400">mg</span>
+                </label>
               </div>
             </div>
             <div x-show="step === 2" x-collapse class="px-6 pb-6 space-y-4">
