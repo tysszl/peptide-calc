@@ -378,7 +378,7 @@
         aliases: ['Mounjaro', 'Zepbound'],
         category: 'GLP-1/GIP',
         description: 'Dual GLP-1/GIP agonist for weight management',
-        commonVials: [12, 18, 24, 34, 60],
+        commonVials: [12, 18, 24, 34],
         doseRanges: {
           micro: { min: 1, max: 2.5, label: 'Micro' },
           small: { min: 2.5, max: 5, label: 'Small' },
@@ -1187,9 +1187,12 @@
                 <span x-show="peptide.commonVials.length > 0" class="text-xs text-stone-400">or</span>
                 <div
                   class="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-colors"
-                  :class="!peptide.commonVials.includes(vialMg) ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
+                  :class="!peptide.commonVials.includes(vialMg) && vialMg ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
                 >
-                  <input type="number" x-model.number="vialMg" class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none" min="1" step="1" :placeholder="peptide.commonVials.length === 0 ? '' : '__'">
+                  <input type="number"
+                    :value="peptide.commonVials.includes(vialMg) ? '' : vialMg"
+                    @input="vialMg = $event.target.value ? Number($event.target.value) : null"
+                    class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none" min="1" step="1" placeholder="">
                   <span class="text-stone-500 text-sm">mg</span>
                 </div>
               </div>
