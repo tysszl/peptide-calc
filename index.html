@@ -1306,19 +1306,21 @@
       <!-- ==================== MAIN CALCULATOR CARD ==================== -->
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
-        <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-b border-stone-100 overflow-x-auto">
-          <div class="flex items-center gap-2 sm:gap-4 text-sm min-w-max">
-            <div class="flex items-center gap-1 sm:gap-1.5">
-              <span class="text-stone-500 text-xs sm:text-sm hidden sm:inline">Peptide</span>
-              <div class="relative">
+        <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-b border-stone-100">
+          <!-- Mobile: 2 rows, Desktop: 1 row -->
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+            <!-- Row 1 on mobile: Peptide -->
+            <div class="flex items-center gap-1.5">
+              <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
+              <div class="relative flex-1 sm:flex-none">
                 <input
                   type="text"
                   list="peptide-list-main"
                   :value="peptideId === 'other' ? customPeptideName : PEPTIDES[peptideId]?.name"
                   @input="handlePeptideInput($event.target.value)"
                   @change="handlePeptideInput($event.target.value)"
-                  placeholder="Peptide..."
-                  class="bg-white border border-stone-200 rounded px-1.5 sm:px-2 py-1 sm:py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-24 sm:w-32"
+                  placeholder="Select..."
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full sm:w-32"
                 >
                 <datalist id="peptide-list-main">
                   <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
@@ -1327,19 +1329,22 @@
                 </datalist>
               </div>
             </div>
-            <div class="w-px h-6 bg-stone-200"></div>
-            <div class="flex items-center gap-1 sm:gap-1.5">
-              <span class="text-stone-500 text-xs sm:text-sm">Vial</span>
-              <input type="number" x-model.number="vialMg" @input="onVialChange()"
-                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-12 sm:w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="1" step="1">
-              <span class="text-stone-500 text-xs sm:text-sm">mg</span>
-            </div>
-            <div class="w-px h-6 bg-stone-200"></div>
-            <div class="flex items-center gap-1 sm:gap-1.5">
-              <span class="text-stone-500 whitespace-nowrap text-xs sm:text-sm">BAC Water</span>
-              <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
-                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-12 sm:w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
-              <span class="text-stone-500 text-xs sm:text-sm">mL</span>
+            <!-- Row 2 on mobile: Vial + BAC Water -->
+            <div class="flex items-center gap-3 sm:gap-4">
+              <div class="hidden sm:block w-px h-6 bg-stone-200"></div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-stone-500 text-xs sm:text-sm">Vial</span>
+                <input type="number" x-model.number="vialMg" @input="onVialChange()"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400" min="1" step="1">
+                <span class="text-stone-500 text-xs sm:text-sm">mg</span>
+              </div>
+              <div class="w-px h-6 bg-stone-200"></div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-stone-500 whitespace-nowrap text-xs sm:text-sm">BAC Water</span>
+                <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
+                <span class="text-stone-500 text-xs sm:text-sm">mL</span>
+              </div>
             </div>
           </div>
         </div>
