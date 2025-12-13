@@ -1034,7 +1034,7 @@
 </head>
 <body>
   <div x-data="peptideApp()" x-init="init()" class="min-h-screen">
-    <div class="max-w-xl sm:max-w-2xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
+    <div class="max-w-[600px] mx-auto px-3 sm:px-4 py-3 sm:py-6">
 
       <!-- ==================== HEADER ==================== -->
       <header class="flex items-center justify-between mb-3">
@@ -1306,18 +1306,18 @@
       <!-- ==================== MAIN CALCULATOR CARD ==================== -->
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
-        <div class="px-3 sm:px-5 py-2 bg-stone-50 border-b border-stone-100">
-          <!-- Mobile: 2 rows, Desktop: 1 row -->
-          <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 text-sm">
+        <div class="px-3 sm:px-4 py-2 bg-stone-50 border-b border-stone-100">
+          <!-- 2 rows on narrow, 1 row on wider screens -->
+          <div class="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 text-sm">
             <!-- Row 1 on mobile: Peptide -->
             <div class="flex items-center gap-1.5">
               <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
               <!-- Dropdown for preset peptides -->
-              <div x-show="peptideId !== 'other'" class="flex-1 sm:flex-none">
+              <div x-show="peptideId !== 'other'" class="flex-1 md:flex-none">
                 <select
                   x-model="peptideId"
                   @change="if(peptideId !== 'other') selectPeptide(peptideId)"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full sm:w-36"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full md:w-36"
                 >
                   <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
                     <option :value="p" x-text="PEPTIDES[p].name"></option>
@@ -1326,12 +1326,12 @@
                 </select>
               </div>
               <!-- Text input for custom peptide name -->
-              <div x-show="peptideId === 'other'" class="flex items-center gap-1.5 flex-1 sm:flex-none">
+              <div x-show="peptideId === 'other'" class="flex items-center gap-1.5 flex-1 md:flex-none">
                 <input
                   type="text"
                   x-model="customPeptideName"
                   placeholder="Peptide name"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full sm:w-28"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full md:w-28"
                 >
                 <button
                   @click="peptideId = 'tirzepatide'; selectPeptide('tirzepatide')"
@@ -1344,9 +1344,9 @@
                 </button>
               </div>
             </div>
-            <!-- Row 2 on mobile: Vial + BAC Water -->
-            <div class="flex items-center justify-between sm:justify-start gap-4 sm:gap-4">
-              <div class="hidden sm:block w-px h-6 bg-stone-200"></div>
+            <!-- Row 2 on narrow: Vial + BAC Water -->
+            <div class="flex items-center justify-between md:justify-start gap-4">
+              <div class="hidden md:block w-px h-6 bg-stone-200"></div>
               <div class="flex items-center gap-1.5">
                 <span class="text-stone-500 text-xs sm:text-sm">Vial</span>
                 <input type="number" x-model.number="vialMg" @input="onVialChange()"
@@ -1368,7 +1368,7 @@
         <div class="px-3 sm:px-4 py-3 space-y-3">
           <!-- Dose + Draw Row -->
           <!-- Dose Input (compact ~1/3) -->
-          <div class="flex flex-col items-center gap-2 max-w-md mx-auto">
+          <div class="flex flex-col items-center gap-2">
             <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2.5 w-full">
               <div class="flex items-center gap-2">
                 <span class="text-xs text-stone-500 uppercase tracking-wide whitespace-nowrap">Dose</span>
