@@ -1312,7 +1312,8 @@
             <!-- Row 1 on mobile: Peptide -->
             <div class="flex items-center gap-1.5">
               <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
-              <div class="relative flex-1 sm:flex-none">
+              <!-- Dropdown for preset peptides -->
+              <div x-show="peptideId !== 'other'" class="relative flex-1 sm:flex-none">
                 <select
                   x-model="peptideId"
                   @change="if(peptideId !== 'other') selectPeptide(peptideId)"
@@ -1326,6 +1327,24 @@
                 <svg class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
+              </div>
+              <!-- Text input for custom peptide name -->
+              <div x-show="peptideId === 'other'" class="flex items-center gap-1.5 flex-1 sm:flex-none">
+                <input
+                  type="text"
+                  x-model="customPeptideName"
+                  placeholder="Peptide name"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full sm:w-28"
+                >
+                <button
+                  @click="peptideId = 'tirzepatide'; selectPeptide('tirzepatide')"
+                  class="text-stone-400 hover:text-stone-600 p-1"
+                  title="Back to presets"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
               </div>
             </div>
             <!-- Row 2 on mobile: Vial + BAC Water -->
