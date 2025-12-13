@@ -410,7 +410,7 @@
         aliases: [],
         category: 'Custom',
         description: 'Enter custom peptide details',
-        commonVials: [10],
+        commonVials: [],
         doseRanges: {},
         quickDoses: [],
         defaultDose: 1
@@ -858,7 +858,12 @@
           this.peptideId = id;
           const p = PEPTIDES[id];
           if (p) {
-            this.vialMg = p.commonVials[1] || p.commonVials[0] || 10;
+            // For custom peptides with no commonVials, clear vialMg so input appears empty
+            if (p.commonVials.length > 0) {
+              this.vialMg = p.commonVials[1] || p.commonVials[0];
+            } else {
+              this.vialMg = null;
+            }
             this.currentDose = p.defaultDose || 1;
             if (p.doseRanges.small) {
               this.doseMin = p.doseRanges.small.min;
@@ -1133,8 +1138,8 @@
                 <input
                   type="text"
                   x-model="customPeptideName"
-                  @focus="peptideId = 'other'"
-                  @input="peptideId = 'other'"
+                  @focus="if(peptideId !== 'other') selectPeptide('other')"
+                  @input="if(peptideId !== 'other') selectPeptide('other')"
                   placeholder="Custom"
                   class="pill-btn px-4 py-2 rounded-lg text-sm font-medium w-28 text-center focus:outline-none"
                   :class="peptideId === 'other' ? 'active' : ''"
@@ -1177,13 +1182,13 @@
                 </button>
               </template>
               <!-- Custom vial input with label -->
-              <div class="flex items-center gap-1 border-l border-stone-200 pl-2 ml-1">
-                <span class="text-xs text-stone-400">or</span>
+              <div class="flex items-center gap-1" :class="peptide.commonVials.length > 0 ? 'border-l border-stone-200 pl-2 ml-1' : ''">
+                <span x-show="peptide.commonVials.length > 0" class="text-xs text-stone-400">or</span>
                 <div
                   class="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-colors"
                   :class="!peptide.commonVials.includes(vialMg) ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
                 >
-                  <input type="number" x-model.number="vialMg" class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none" min="1" step="1" placeholder="__">
+                  <input type="number" x-model.number="vialMg" class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none" min="1" step="1" :placeholder="peptide.commonVials.length === 0 ? '' : '__'">
                   <span class="text-stone-500 text-sm">mg</span>
                 </div>
               </div>
