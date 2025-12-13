@@ -1318,7 +1318,7 @@
                   @input="handlePeptideInput($event.target.value)"
                   @change="handlePeptideInput($event.target.value)"
                   placeholder="Peptide..."
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-28 sm:w-32 text-sm"
+                  class="bg-white border border-stone-200 rounded px-1.5 sm:px-2 py-1 sm:py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-24 sm:w-32"
                 >
                 <datalist id="peptide-list-main">
                   <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
