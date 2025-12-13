@@ -1368,8 +1368,8 @@
         <div class="px-3 sm:px-4 py-3 space-y-3">
           <!-- Dose + Draw Row -->
           <!-- Dose Input (compact ~1/3) -->
-          <div class="flex flex-col sm:flex-row sm:items-stretch sm:justify-center sm:gap-4">
-            <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2.5 sm:flex-1 sm:max-w-xs">
+          <div class="flex flex-col items-center gap-2 max-w-md mx-auto">
+            <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2.5 w-full">
               <div class="flex items-center gap-2">
                 <span class="text-xs text-stone-500 uppercase tracking-wide whitespace-nowrap">Dose</span>
                 <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
@@ -1395,7 +1395,7 @@
             </div>
 
             <!-- Draw Result + Syringe (~2/3) -->
-            <div class="flex flex-col bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 mt-2 sm:mt-0 sm:flex-1 sm:max-w-xs">
+            <div class="flex flex-col bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 w-full">
               <div class="flex items-center justify-center gap-2 mb-2">
                 <span class="text-xs text-teal-600 uppercase tracking-wide">Draw</span>
                 <div class="flex flex-col items-center">
