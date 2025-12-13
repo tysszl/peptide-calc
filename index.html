@@ -1012,11 +1012,11 @@
 </head>
 <body>
   <div x-data="peptideApp()" x-init="init()" class="min-h-screen">
-    <div class="max-w-xl mx-auto px-4 py-4 md:py-6">
+    <div class="max-w-xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
 
       <!-- ==================== HEADER ==================== -->
       <header class="flex items-center justify-between mb-3">
-        <h1 class="font-display text-xl text-stone-800">Peptide Calculator</h1>
+        <h1 class="font-display text-lg sm:text-xl text-stone-800">Peptide Calculator</h1>
         <div class="flex items-center gap-2">
           <!-- Saved Setups Dropdown -->
           <div x-show="savedSetups.length > 0" class="relative">
@@ -1061,13 +1061,14 @@
           <!-- Setup Steps Toggle -->
           <button
             @click="toggleWizard()"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             :class="showWizard ? 'bg-teal-500 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
             </svg>
-            <span x-text="showWizard ? 'Hide' : 'Guided Setup'"></span>
+            <span class="hidden sm:inline" x-text="showWizard ? 'Hide' : 'Guided Setup'"></span>
+            <span class="sm:hidden" x-text="showWizard ? 'Hide' : 'Setup'"></span>
           </button>
         </div>
       </header>
@@ -1078,7 +1079,7 @@
         <!-- Step 1: Peptide Selection -->
         <div class="card rounded-xl overflow-hidden">
           <div
-            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            class="px-3 sm:px-4 py-2.5 flex items-center justify-between cursor-pointer"
             :class="wizardStep === 1 ? 'bg-white' : 'bg-stone-50'"
             @click="wizardStep = 1"
           >
@@ -1094,7 +1095,7 @@
             </div>
             <div x-show="wizardStep > 1" class="text-sm text-stone-600" x-text="peptide.name"></div>
           </div>
-          <div x-show="wizardStep === 1" x-collapse class="px-4 pb-4 space-y-3">
+          <div x-show="wizardStep === 1" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
             <p class="text-sm text-stone-500">Select the peptide you're using</p>
             <div class="flex flex-wrap gap-2">
               <template x-for="p in ['tirzepatide', 'retatrutide']" :key="p">
@@ -1125,7 +1126,7 @@
         <!-- Step 2: Vial Size -->
         <div x-show="wizardStep >= 2" class="card rounded-xl overflow-hidden">
           <div
-            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            class="px-3 sm:px-4 py-2.5 flex items-center justify-between cursor-pointer"
             :class="wizardStep === 2 ? 'bg-white' : 'bg-stone-50'"
             @click="wizardStep = 2"
           >
@@ -1141,7 +1142,7 @@
             </div>
             <div x-show="wizardStep > 2" class="text-sm font-mono text-stone-600" x-text="vialMg + ' mg'"></div>
           </div>
-          <div x-show="wizardStep === 2" x-collapse class="px-4 pb-4 space-y-3">
+          <div x-show="wizardStep === 2" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
             <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
             <div class="flex flex-wrap items-center gap-2">
               <template x-for="size in peptide.commonVials" :key="size">
@@ -1175,7 +1176,7 @@
         <!-- Step 3: Dose Range -->
         <div x-show="wizardStep >= 3" class="card rounded-xl overflow-hidden">
           <div
-            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            class="px-3 sm:px-4 py-2.5 flex items-center justify-between cursor-pointer"
             :class="wizardStep === 3 ? 'bg-white' : 'bg-stone-50'"
             @click="wizardStep = 3"
           >
@@ -1191,7 +1192,7 @@
             </div>
             <div x-show="wizardStep > 3" class="text-sm font-mono text-stone-600" x-text="doseMin + '–' + doseMax + ' mg'"></div>
           </div>
-          <div x-show="wizardStep === 3" x-collapse class="px-4 pb-4 space-y-3">
+          <div x-show="wizardStep === 3" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
             <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
             <template x-if="Object.keys(peptide.doseRanges).length > 0">
               <div class="flex flex-wrap gap-2">
@@ -1231,7 +1232,7 @@
         <!-- Step 4: BAC Water -->
         <div x-show="wizardStep >= 4" class="card rounded-xl overflow-hidden">
           <div
-            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            class="px-3 sm:px-4 py-2.5 flex items-center justify-between cursor-pointer"
             :class="wizardStep === 4 ? 'bg-white' : 'bg-stone-50'"
             @click="wizardStep = 4"
           >
@@ -1242,7 +1243,7 @@
               <div class="font-medium text-stone-800 text-sm">BAC Water</div>
             </div>
           </div>
-          <div x-show="wizardStep === 4" x-collapse class="px-4 pb-4 space-y-3">
+          <div x-show="wizardStep === 4" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
             <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-medium text-teal-800 text-sm">Recommended:</span>
@@ -1283,10 +1284,10 @@
       <!-- ==================== MAIN CALCULATOR CARD ==================== -->
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
-        <div class="px-4 py-2.5 bg-stone-50 border-b border-stone-100">
-          <div class="flex items-center gap-4 text-sm">
-            <div class="flex items-center gap-1.5">
-              <span class="text-stone-500">Peptide</span>
+        <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-b border-stone-100 overflow-x-auto">
+          <div class="flex items-center gap-2 sm:gap-4 text-sm min-w-max">
+            <div class="flex items-center gap-1 sm:gap-1.5">
+              <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
               <div class="relative">
                 <input
                   type="text"
@@ -1295,7 +1296,7 @@
                   @input="handlePeptideInput($event.target.value)"
                   @change="handlePeptideInput($event.target.value)"
                   placeholder="Select..."
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-32 text-sm"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-28 sm:w-32 text-sm"
                 >
                 <datalist id="peptide-list-main">
                   <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
@@ -1305,31 +1306,31 @@
               </div>
             </div>
             <div class="w-px h-6 bg-stone-200"></div>
-            <div class="flex items-center gap-1.5">
-              <span class="text-stone-500">Vial</span>
+            <div class="flex items-center gap-1 sm:gap-1.5">
+              <span class="text-stone-500 text-xs sm:text-sm">Vial</span>
               <input type="number" x-model.number="vialMg" @input="onVialChange()"
-                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="1" step="1">
-              <span class="text-stone-500">mg</span>
+                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-12 sm:w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="1" step="1">
+              <span class="text-stone-500 text-xs sm:text-sm">mg</span>
             </div>
             <div class="w-px h-6 bg-stone-200"></div>
-            <div class="flex items-center gap-1.5">
-              <span class="text-stone-500 whitespace-nowrap">BAC Water</span>
+            <div class="flex items-center gap-1 sm:gap-1.5">
+              <span class="text-stone-500 whitespace-nowrap text-xs sm:text-sm">BAC Water</span>
               <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
-                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
-              <span class="text-stone-500">mL</span>
+                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-12 sm:w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
+              <span class="text-stone-500 text-xs sm:text-sm">mL</span>
             </div>
           </div>
         </div>
 
         <!-- Main Calculator -->
-        <div class="px-4 py-4 space-y-4">
+        <div class="px-3 sm:px-4 py-4 space-y-4">
           <!-- Dose Row -->
-          <div class="flex items-start justify-center gap-6">
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             <div class="flex flex-col items-center gap-1.5 w-48">
               <span class="text-xs text-stone-400 uppercase tracking-wide">Target Dose</span>
               <div class="flex items-center gap-2">
                 <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                  class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
+                  class="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-xl sm:text-lg font-medium flex-shrink-0 transition-colors">−</button>
                 <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1.5 w-32 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
                   <input type="number" x-model.number="currentDose"
                     class="w-20 text-left font-mono text-2xl font-semibold text-stone-800 bg-transparent focus:outline-none"
@@ -1337,7 +1338,7 @@
                   <span class="text-sm text-stone-400">mg</span>
                 </div>
                 <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                  class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
+                  class="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-xl sm:text-lg font-medium flex-shrink-0 transition-colors">+</button>
               </div>
               <!-- Quick Doses (under Target Dose) -->
               <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex justify-center gap-2">
@@ -1350,9 +1351,9 @@
               </div>
             </div>
 
-            <div class="flex flex-col items-center gap-1.5 w-40">
+            <div class="flex flex-col items-center gap-1.5 w-full sm:w-40">
               <span class="text-xs text-stone-400 uppercase tracking-wide">Draw</span>
-              <div class="flex flex-col items-center bg-teal-50 border border-teal-200 rounded-xl px-6 py-3 w-full">
+              <div class="flex flex-col items-center bg-teal-50 border border-teal-200 rounded-xl px-6 py-3 w-full max-w-48 sm:max-w-none">
                 <div class="flex items-baseline gap-2">
                   <span class="text-teal-400">=</span>
                   <span class="font-mono font-bold text-3xl text-teal-600" x-text="fmt(units)"></span>
@@ -1376,32 +1377,34 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-4 py-2.5 bg-stone-50 border-t border-stone-100 flex items-start justify-between">
-          <div class="flex flex-col gap-1">
-            <span class="text-xs text-stone-400">Syringe</span>
-            <div class="flex">
-              <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
-                class="px-2.5 py-1 rounded-l border font-mono text-xs transition-colors">0.5 mL</button>
-              <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
-                class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
+        <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-t border-stone-100">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs text-stone-400">Syringe</span>
+              <div class="flex">
+                <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                  class="px-2.5 py-1 rounded-l border font-mono text-xs transition-colors">0.5 mL</button>
+                <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                  class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
+              </div>
             </div>
-          </div>
-          <div class="flex items-start gap-5">
-            <div class="flex flex-col gap-1 text-center">
-              <span class="text-xs text-stone-400">Concentration</span>
-              <span class="font-mono font-medium text-stone-700" x-text="fmtConc(concentration) + ' mg/mL'"></span>
-            </div>
-            <div class="flex flex-col gap-1 text-center">
-              <span class="text-xs text-stone-400">Units/mg</span>
-              <span class="font-mono font-medium text-stone-700" x-text="fmt(100 / concentration)"></span>
-            </div>
-            <div class="flex flex-col gap-1 text-center">
-              <span class="text-xs text-stone-400">Max Dose</span>
-              <span class="font-mono font-medium text-stone-700" x-text="fmt(parseFloat(syringeSize) * concentration) + ' mg'"></span>
-            </div>
-            <div class="flex flex-col gap-1 text-center">
-              <span class="text-xs text-stone-400">Doses/Vial</span>
-              <span class="font-mono font-medium text-stone-700" x-text="dosesPerVial || '—'"></span>
+            <div class="grid grid-cols-4 gap-3 sm:flex sm:items-start sm:gap-5">
+              <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
+                <span class="text-[10px] sm:text-xs text-stone-400">Concentration</span>
+                <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="fmtConc(concentration) + ' mg/mL'"></span>
+              </div>
+              <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
+                <span class="text-[10px] sm:text-xs text-stone-400">Units/mg</span>
+                <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="fmt(100 / concentration)"></span>
+              </div>
+              <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
+                <span class="text-[10px] sm:text-xs text-stone-400">Max Dose</span>
+                <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="fmt(parseFloat(syringeSize) * concentration) + ' mg'"></span>
+              </div>
+              <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
+                <span class="text-[10px] sm:text-xs text-stone-400">Doses/Vial</span>
+                <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="dosesPerVial || '—'"></span>
+              </div>
             </div>
           </div>
         </div>
