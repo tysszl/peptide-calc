@@ -370,10 +370,10 @@
         description: 'Dual GLP-1/GIP agonist for weight management',
         commonVials: [5, 10, 15, 30],
         doseRanges: {
-          microdose: { min: 1, max: 2.5, label: 'Microdose' },
-          low: { min: 2.5, max: 5, label: 'Low dose' },
-          normal: { min: 5, max: 10, label: 'Normal dose' },
-          high: { min: 10, max: 15, label: 'High dose' }
+          micro: { min: 1, max: 2.5, label: 'Micro' },
+          small: { min: 2.5, max: 5, label: 'Small' },
+          medium: { min: 5, max: 10, label: 'Medium' },
+          high: { min: 10, max: 15, label: 'High' }
         },
         quickDoses: [1.25, 2.5, 5, 7.5, 10, 15],
         defaultDose: 2.5
@@ -386,10 +386,10 @@
         description: 'Triple agonist (investigational)',
         commonVials: [5, 10, 15],
         doseRanges: {
-          microdose: { min: 0.5, max: 2, label: 'Microdose' },
-          low: { min: 2, max: 4, label: 'Low dose' },
-          medium: { min: 4, max: 8, label: 'Medium dose' },
-          high: { min: 8, max: 12, label: 'High dose' }
+          micro: { min: 0.5, max: 2, label: 'Micro' },
+          small: { min: 2, max: 4, label: 'Small' },
+          medium: { min: 4, max: 8, label: 'Medium' },
+          high: { min: 8, max: 12, label: 'High' }
         },
         quickDoses: [1, 2, 4, 6, 8, 12],
         defaultDose: 2
@@ -725,12 +725,9 @@
     // ============================================
     function peptideApp() {
       return {
-        // Mode: 'guided' or 'quick'
-        mode: 'quick',
-
-        // Guided setup state
-        step: 1,
-        totalSteps: 5,
+        // Wizard state
+        showWizard: false,
+        wizardStep: 1,
 
         // Form data
         peptideId: 'tirzepatide',
@@ -749,7 +746,8 @@
 
         // UI state
         showWaterOptions: false,
-        waterManuallySet: false, // Track if user manually edited water in Advanced mode
+        showSavedSetups: false,
+        waterManuallySet: false,
 
         // Getters
         get peptide() {
@@ -802,25 +800,47 @@
           // Restore last used settings if available
           if (this.storage.lastUsed) {
             this.restoreLastUsed();
+            this.showWizard = false;
+          } else {
+            // First-time user: show wizard
+            this.showWizard = true;
+            this.wizardStep = 1;
           }
 
           // Watch for changes to save
           this.$watch('currentDose', () => this.saveLastUsed());
         },
 
-        // Step navigation
-        nextStep() {
-          if (this.step < this.totalSteps) {
-            this.step++;
-            if (this.step === 4) {
+        // Wizard navigation
+        wizardNext() {
+          if (this.wizardStep < 4) {
+            this.wizardStep++;
+            if (this.wizardStep === 4) {
               // Apply recommendation when reaching water step
               this.waterMl = this.recommendation.waterMl;
             }
+          } else {
+            // Complete wizard - auto collapse
+            this.completeWizard();
           }
         },
 
-        prevStep() {
-          if (this.step > 1) this.step--;
+        wizardBack() {
+          if (this.wizardStep > 1) this.wizardStep--;
+        },
+
+        completeWizard() {
+          this.showWizard = false;
+          this.currentDose = this.doseMin;
+          this.storage.hasCompletedSetup = true;
+          this.saveLastUsed();
+        },
+
+        toggleWizard() {
+          this.showWizard = !this.showWizard;
+          if (this.showWizard && this.wizardStep > 4) {
+            this.wizardStep = 1;
+          }
         },
 
         // Peptide selection
@@ -830,14 +850,13 @@
           if (p) {
             this.vialMg = p.commonVials[1] || p.commonVials[0] || 10;
             this.currentDose = p.defaultDose || 1;
-            if (p.doseRanges.low) {
-              this.doseMin = p.doseRanges.low.min;
-              this.doseMax = p.doseRanges.standard?.max || p.doseRanges.low.max;
+            if (p.doseRanges.small) {
+              this.doseMin = p.doseRanges.small.min;
+              this.doseMax = p.doseRanges.small.max;
             }
-            // Auto-update water recommendation in Advanced mode
-            if (this.mode === 'quick') {
+            // Auto-update water recommendation if not manually set
+            if (!this.waterManuallySet) {
               this.waterMl = this.recommendedWater;
-              this.waterManuallySet = false;
             }
           }
         },
@@ -858,9 +877,9 @@
           }
         },
 
-        // Update water when vial changes (for Advanced mode)
+        // Update water when vial changes
         onVialChange() {
-          if (this.mode === 'quick' && !this.waterManuallySet) {
+          if (!this.waterManuallySet) {
             this.waterMl = recommendWaterSimple(this.vialMg);
           }
           this.saveLastUsed();
@@ -888,29 +907,8 @@
           );
         },
 
-        // Save setup (for quick mode - switches to quick)
+        // Save current setup
         saveSetup() {
-          const setup = {
-            id: Date.now().toString(36),
-            name: `${this.peptide.name} ${this.vialMg}mg/${this.waterMl}mL`,
-            peptideId: this.peptideId,
-            vialMg: this.vialMg,
-            waterMl: this.waterMl,
-            syringeSize: this.syringeSize,
-            createdAt: new Date().toISOString()
-          };
-
-          this.savedSetups.push(setup);
-          this.storage.setups = this.savedSetups;
-          this.storage.hasCompletedSetup = true;
-          Storage.save(this.storage);
-
-          this.activeSetupId = setup.id;
-          this.mode = 'quick';
-        },
-
-        // Save setup from guided mode (stays in guided)
-        saveSetupGuided() {
           if (this.isCurrentSetupSaved()) return;
 
           const setup = {
@@ -937,25 +935,17 @@
           this.waterMl = setup.waterMl;
           this.syringeSize = setup.syringeSize;
           this.activeSetupId = setup.id;
-          this.currentDose = PEPTIDES[setup.peptideId]?.defaultDose || 1;
-        },
-
-        // Load a saved setup in guided mode (jumps to step 6)
-        loadSetupGuided(setup) {
-          this.peptideId = setup.peptideId;
-          this.vialMg = setup.vialMg;
-          this.waterMl = setup.waterMl;
-          this.syringeSize = setup.syringeSize;
-          this.activeSetupId = setup.id;
+          this.waterManuallySet = true; // Don't auto-update water when loading saved
           // Set dose range based on peptide
           const p = PEPTIDES[setup.peptideId];
           if (p && p.doseRanges) {
             const firstRange = Object.values(p.doseRanges)[0];
-            this.doseMin = firstRange.min;
-            this.doseMax = firstRange.max;
+            this.doseMin = firstRange?.min || 1;
+            this.doseMax = firstRange?.max || 5;
           }
           this.currentDose = p?.defaultDose || 1;
-          this.step = 5;
+          this.showWizard = false;
+          this.showSavedSetups = false;
         },
 
         // Delete setup
@@ -989,13 +979,15 @@
             this.waterMl = lu.waterMl || 2;
             this.syringeSize = lu.syringeSize || '0.5';
             this.currentDose = lu.currentDose || 2.5;
+            this.waterManuallySet = true; // Don't auto-update on restore
           }
         },
 
-        // Start new setup from quick mode
+        // Start new setup (reset wizard)
         startNewSetup() {
-          this.mode = 'guided';
-          this.step = 1;
+          this.showWizard = true;
+          this.wizardStep = 1;
+          this.waterManuallySet = false;
         },
 
         // Format helpers
@@ -1020,607 +1012,422 @@
 </head>
 <body>
   <div x-data="peptideApp()" x-init="init()" class="min-h-screen">
+    <div class="max-w-xl mx-auto px-4 py-4 md:py-6">
 
-    <!-- ==================== GUIDED MODE ==================== -->
-    <template x-if="mode === 'guided'">
-      <div class="max-w-xl mx-auto px-4 py-4 md:py-6">
-
-        <!-- Header with Mode Toggle -->
-        <header class="flex items-center justify-between mb-3">
-          <h1 class="font-display text-xl text-stone-800">Peptide Calculator</h1>
-          <div class="inline-flex bg-stone-100 rounded-lg p-0.5">
-            <button class="px-3 py-1 rounded-md text-xs font-medium bg-white shadow-sm text-stone-800">
-              Guided
-            </button>
-            <button @click="mode = 'quick'" class="px-3 py-1 rounded-md text-xs font-medium text-stone-500 hover:text-stone-700">
-              Quick
-            </button>
-          </div>
-        </header>
-
-        <!-- Saved Setups -->
-        <div x-show="savedSetups.length > 0" class="mb-3">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs text-stone-400 uppercase tracking-wide">Saved Setups</span>
+      <!-- ==================== HEADER ==================== -->
+      <header class="flex items-center justify-between mb-3">
+        <h1 class="font-display text-xl text-stone-800">Peptide Calculator</h1>
+        <div class="flex items-center gap-2">
+          <!-- Saved Setups Dropdown -->
+          <div x-show="savedSetups.length > 0" class="relative">
             <button
-              @click="step = 1; activeSetupId = null"
-              class="text-xs text-teal-600 hover:text-teal-700 font-medium"
-            >+ New</button>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <template x-for="setup in savedSetups" :key="setup.id">
-              <div
-                class="group flex items-center gap-1 bg-white border rounded-lg px-2.5 py-1.5 text-sm cursor-pointer hover:border-teal-300 transition-colors"
-                :class="activeSetupId === setup.id ? 'border-teal-500 bg-teal-50' : 'border-stone-200'"
-                @click="loadSetupGuided(setup)"
-              >
-                <span class="text-stone-700" x-text="setup.name"></span>
-                <button
-                  @click.stop="deleteSetup(setup.id)"
-                  class="ml-1 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Delete"
+              @click="showSavedSetups = !showSavedSetups"
+              class="p-2 rounded-lg hover:bg-stone-100 text-stone-500 hover:text-stone-700 transition-colors"
+              :class="showSavedSetups ? 'bg-stone-100 text-stone-700' : ''"
+              title="Saved setups"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+              </svg>
+            </button>
+            <!-- Dropdown panel -->
+            <div
+              x-show="showSavedSetups"
+              @click.away="showSavedSetups = false"
+              x-transition
+              class="absolute right-0 mt-1 w-64 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
+            >
+              <div class="px-3 py-1.5 text-xs text-stone-400 uppercase tracking-wide">Saved Setups</div>
+              <template x-for="setup in savedSetups" :key="setup.id">
+                <div
+                  class="group flex items-center justify-between px-3 py-2 hover:bg-stone-50 cursor-pointer"
+                  :class="activeSetupId === setup.id ? 'bg-teal-50' : ''"
+                  @click="loadSetup(setup)"
                 >
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </template>
-          </div>
-        </div>
-
-        <!-- Progressive Steps -->
-        <div class="space-y-2">
-
-          <!-- Step 1: Peptide Selection -->
-          <div class="card rounded-xl overflow-hidden">
-            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 1 ? 'bg-white' : 'bg-stone-50'">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                     :class="step > 1 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
-                  <span x-show="step <= 1">1</span>
-                  <svg x-show="step > 1" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <div class="font-medium text-stone-800 text-sm">Peptide</div>
-              </div>
-              <!-- Quick-edit buttons when collapsed -->
-              <div x-show="step > 1" class="flex gap-1.5">
-                <template x-for="p in ['tirzepatide', 'retatrutide', 'other']" :key="p">
+                  <span class="text-sm text-stone-700" x-text="setup.name"></span>
                   <button
-                    @click="selectPeptide(p)"
-                    :class="peptideId === p ? 'active' : ''"
-                    class="pill-btn px-3 py-1 rounded-lg text-xs font-medium"
-                    x-text="PEPTIDES[p].name"
-                  ></button>
-                </template>
-              </div>
-            </div>
-            <div x-show="step === 1" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">Select the peptide you're using</p>
-              <div class="grid grid-cols-2 gap-3">
-                <template x-for="p in ['tirzepatide', 'retatrutide', 'other']" :key="p">
-                  <button
-                    @click="selectPeptide(p)"
-                    :class="peptideId === p ? 'selected' : ''"
-                    class="select-card rounded-xl p-4 text-left"
+                    @click.stop="deleteSetup(setup.id)"
+                    class="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete"
                   >
-                    <div class="flex items-start justify-between">
-                      <div>
-                        <div class="font-medium text-stone-800" x-text="PEPTIDES[p].name"></div>
-                        <div class="text-xs text-stone-400 mt-0.5" x-text="PEPTIDES[p].category"></div>
-                      </div>
-                      <div class="select-indicator mt-1"></div>
-                    </div>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                   </button>
-                </template>
+                </div>
+              </template>
+            </div>
+          </div>
+          <!-- Setup Steps Toggle -->
+          <button
+            @click="toggleWizard()"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            :class="showWizard ? 'bg-teal-500 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+            <span x-text="showWizard ? 'Hide' : 'Guided Setup'"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ==================== WIZARD (Collapsible) ==================== -->
+      <div x-show="showWizard" x-collapse class="mb-3 space-y-2">
+
+        <!-- Step 1: Peptide Selection -->
+        <div class="card rounded-xl overflow-hidden">
+          <div
+            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            :class="wizardStep === 1 ? 'bg-white' : 'bg-stone-50'"
+            @click="wizardStep = 1"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                   :class="wizardStep > 1 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                <span x-show="wizardStep <= 1">1</span>
+                <svg x-show="wizardStep > 1" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
               </div>
-              <div x-show="peptide.aliases && peptide.aliases.length" class="text-sm text-stone-500 bg-stone-50 rounded-lg p-3">
-                <span class="text-stone-400">Also known as:</span>
-                <span x-text="peptide.aliases.join(', ')"></span>
-              </div>
-              <div x-show="peptideId === 'other'" class="flex items-center gap-2">
-                <label class="text-sm text-stone-500">Name:</label>
+              <div class="font-medium text-stone-800 text-sm">Peptide</div>
+            </div>
+            <div x-show="wizardStep > 1" class="text-sm text-stone-600" x-text="peptide.name"></div>
+          </div>
+          <div x-show="wizardStep === 1" x-collapse class="px-4 pb-4 space-y-3">
+            <p class="text-sm text-stone-500">Select the peptide you're using</p>
+            <div class="flex flex-wrap gap-2">
+              <template x-for="p in ['tirzepatide', 'retatrutide']" :key="p">
+                <button
+                  @click="selectPeptide(p)"
+                  :class="peptideId === p ? 'active' : ''"
+                  class="pill-btn px-4 py-2 rounded-lg text-sm font-medium"
+                  x-text="PEPTIDES[p].name"
+                ></button>
+              </template>
+              <!-- Custom peptide input -->
+              <div class="relative">
                 <input
                   type="text"
                   x-model="customPeptideName"
-                  placeholder="Enter peptide name"
-                  class="flex-1 input-field rounded-lg px-3 py-2 text-sm"
+                  @focus="peptideId = 'other'"
+                  @input="peptideId = 'other'"
+                  placeholder="Custom"
+                  class="pill-btn px-4 py-2 rounded-lg text-sm font-medium w-28 text-center focus:outline-none"
+                  :class="peptideId === 'other' ? 'active' : ''"
                 >
               </div>
-              <button @click="step = 2" class="btn-primary w-full py-3 rounded-xl font-medium">Continue</button>
+            </div>
+            <button @click="wizardNext()" class="btn-primary w-full py-2.5 rounded-lg font-medium">Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Vial Size -->
+        <div x-show="wizardStep >= 2" class="card rounded-xl overflow-hidden">
+          <div
+            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            :class="wizardStep === 2 ? 'bg-white' : 'bg-stone-50'"
+            @click="wizardStep = 2"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                   :class="wizardStep > 2 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                <span x-show="wizardStep <= 2">2</span>
+                <svg x-show="wizardStep > 2" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div class="font-medium text-stone-800 text-sm">Vial Size</div>
+            </div>
+            <div x-show="wizardStep > 2" class="text-sm font-mono text-stone-600" x-text="vialMg + ' mg'"></div>
+          </div>
+          <div x-show="wizardStep === 2" x-collapse class="px-4 pb-4 space-y-3">
+            <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <template x-for="size in peptide.commonVials" :key="size">
+                <button
+                  @click="vialMg = size"
+                  :class="vialMg === size ? 'active' : ''"
+                  class="pill-btn px-4 py-2 rounded-lg font-mono font-medium"
+                >
+                  <span x-text="size"></span><span class="text-stone-400 ml-1">mg</span>
+                </button>
+              </template>
+              <!-- Custom vial input with label -->
+              <div class="flex items-center gap-1 border-l border-stone-200 pl-2 ml-1">
+                <span class="text-xs text-stone-400">or</span>
+                <div
+                  class="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-colors"
+                  :class="!peptide.commonVials.includes(vialMg) ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
+                >
+                  <input type="number" x-model.number="vialMg" class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none" min="1" step="1" placeholder="__">
+                  <span class="text-stone-500 text-sm">mg</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button @click="wizardBack()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">Back</button>
+              <button @click="wizardNext()" class="btn-primary flex-[2] py-2.5 rounded-lg font-medium">Continue</button>
             </div>
           </div>
+        </div>
 
-          <!-- Step 2: Vial Size -->
-          <div x-show="step >= 2" class="card rounded-xl overflow-hidden">
-            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 2 ? 'bg-white' : 'bg-stone-50'">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                     :class="step > 2 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
-                  <span x-show="step <= 2">2</span>
-                  <svg x-show="step > 2" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <div class="font-medium text-stone-800 text-sm">Vial Size</div>
+        <!-- Step 3: Dose Range -->
+        <div x-show="wizardStep >= 3" class="card rounded-xl overflow-hidden">
+          <div
+            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            :class="wizardStep === 3 ? 'bg-white' : 'bg-stone-50'"
+            @click="wizardStep = 3"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                   :class="wizardStep > 3 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                <span x-show="wizardStep <= 3">3</span>
+                <svg x-show="wizardStep > 3" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
               </div>
-              <!-- Quick-edit when collapsed -->
-              <div x-show="step > 2" class="flex items-center gap-1">
-                <template x-for="size in peptide.commonVials" :key="size">
-                  <button
-                    @click="vialMg = size"
-                    :class="vialMg === size ? 'active' : ''"
-                    class="pill-btn px-2 py-1 rounded text-xs font-mono"
-                    x-text="size"
-                  ></button>
-                </template>
-                <label
-                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1 group"
-                  :class="!peptide.commonVials.includes(vialMg) ? 'active' : ''"
-                  title="Click to edit"
-                >
-                  <input
-                    type="number"
-                    x-model.number="vialMg"
-                    class="w-8 bg-transparent font-mono text-center focus:outline-none border-b border-dashed"
-                    :class="!peptide.commonVials.includes(vialMg) ? 'border-white/50' : 'border-stone-300'"
-                    min="1"
-                    step="1"
-                    placeholder="?"
-                  >
-                  <span :class="!peptide.commonVials.includes(vialMg) ? 'text-white/70' : 'text-stone-400'">mg</span>
-                </label>
-              </div>
+              <div class="font-medium text-stone-800 text-sm">Dose Range</div>
             </div>
-            <div x-show="step === 2" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
+            <div x-show="wizardStep > 3" class="text-sm font-mono text-stone-600" x-text="doseMin + '–' + doseMax + ' mg'"></div>
+          </div>
+          <div x-show="wizardStep === 3" x-collapse class="px-4 pb-4 space-y-3">
+            <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
+            <template x-if="Object.keys(peptide.doseRanges).length > 0">
               <div class="flex flex-wrap gap-2">
-                <template x-for="size in peptide.commonVials" :key="size">
-                  <button
-                    @click="vialMg = size"
-                    :class="vialMg === size ? 'active' : ''"
-                    class="pill-btn px-5 py-3 rounded-xl font-mono font-medium"
-                  >
-                    <span x-text="size"></span><span class="text-stone-400 ml-1">mg</span>
-                  </button>
-                </template>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-sm text-stone-500">Or enter:</span>
-                <div class="relative">
-                  <input type="number" x-model.number="vialMg" class="input-field w-28 rounded-lg px-4 py-2 font-mono text-center" min="1" step="1">
-                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mg</span>
-                </div>
-              </div>
-              <div class="flex gap-3">
-                <button @click="step = 1" class="btn-secondary flex-1 py-3 rounded-xl font-medium">Back</button>
-                <button @click="step = 3" class="btn-primary flex-[2] py-3 rounded-xl font-medium">Continue</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 3: Dose Range -->
-          <div x-show="step >= 3" class="card rounded-xl overflow-hidden">
-            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 3 ? 'bg-white' : 'bg-stone-50'">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                     :class="step > 3 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
-                  <span x-show="step <= 3">3</span>
-                  <svg x-show="step > 3" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <div class="font-medium text-stone-800 text-sm">Dose Range</div>
-              </div>
-              <!-- Quick-edit when collapsed -->
-              <div x-show="step > 3" class="flex gap-1">
                 <template x-for="(range, key) in peptide.doseRanges" :key="key">
                   <button
                     @click="applyDoseRange(range)"
                     :class="doseMin === range.min && doseMax === range.max ? 'active' : ''"
-                    class="pill-btn px-2 py-1 rounded text-xs"
-                    x-text="range.label"
-                  ></button>
-                </template>
-              </div>
-            </div>
-            <div x-show="step === 3" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
-              <template x-if="Object.keys(peptide.doseRanges).length > 0">
-                <div class="space-y-2">
-                  <p class="text-xs text-stone-400 uppercase tracking-wide">Common ranges</p>
-                  <div class="flex flex-wrap gap-2">
-                    <template x-for="(range, key) in peptide.doseRanges" :key="key">
-                      <button
-                        @click="applyDoseRange(range)"
-                        :class="doseMin === range.min && doseMax === range.max ? 'active' : ''"
-                        class="pill-btn px-4 py-2 rounded-lg text-sm"
-                      >
-                        <span x-text="range.label"></span>
-                        <span class="text-stone-400 ml-1">(<span x-text="range.min"></span>–<span x-text="range.max"></span>mg)</span>
-                      </button>
-                    </template>
-                  </div>
-                </div>
-              </template>
-              <div class="bg-stone-50 rounded-xl p-4">
-                <p class="text-sm text-stone-600 mb-3">My doses will be between:</p>
-                <div class="flex items-center gap-3">
-                  <div class="relative flex-1">
-                    <input type="number" x-model.number="doseMin" class="input-field w-full rounded-lg px-4 py-3 font-mono text-center" min="0.01" step="0.25">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mg</span>
-                  </div>
-                  <span class="text-stone-400">and</span>
-                  <div class="relative flex-1">
-                    <input type="number" x-model.number="doseMax" class="input-field w-full rounded-lg px-4 py-3 font-mono text-center" min="0.01" step="0.25">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mg</span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex gap-3">
-                <button @click="step = 2" class="btn-secondary flex-1 py-3 rounded-xl font-medium">Back</button>
-                <button @click="step = 4; waterMl = recommendation.waterMl" class="btn-primary flex-[2] py-3 rounded-xl font-medium">Continue</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 4: Bacteriostatic Water -->
-          <div x-show="step >= 4" class="card rounded-xl overflow-hidden">
-            <div class="px-4 py-2.5 flex items-center justify-between" :class="step === 4 ? 'bg-white' : 'bg-stone-50'">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                     :class="step > 4 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
-                  <span x-show="step <= 4">4</span>
-                  <svg x-show="step > 4" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <div class="font-medium text-stone-800 text-sm">Bacteriostatic (BAC) Water</div>
-              </div>
-              <!-- Quick-edit when collapsed -->
-              <div x-show="step > 4" class="flex items-center gap-1">
-                <template x-for="w in [1, 1.5, 2, 2.5, 3]" :key="w">
-                  <button
-                    @click="waterMl = w"
-                    :class="waterMl === w ? 'active' : ''"
-                    class="pill-btn px-2 py-1 rounded text-xs font-mono"
-                    x-text="w"
-                  ></button>
-                </template>
-                <label
-                  class="pill-btn px-2 py-1 rounded text-xs font-mono cursor-text flex items-center gap-1 group"
-                  :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'active' : ''"
-                  title="Click to edit"
-                >
-                  <input
-                    type="number"
-                    x-model.number="waterMl"
-                    class="w-8 bg-transparent font-mono text-center focus:outline-none border-b border-dashed"
-                    :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'border-white/50' : 'border-stone-300'"
-                    min="0.1"
-                    step="0.1"
-                    placeholder="?"
+                    class="pill-btn px-3 py-1.5 rounded-lg text-sm"
                   >
-                  <span :class="![1, 1.5, 2, 2.5, 3].includes(waterMl) ? 'text-white/70' : 'text-stone-400'">mL</span>
-                </label>
+                    <span x-text="range.label"></span>
+                    <span class="text-stone-400 ml-1 text-xs">(<span x-text="range.min"></span>–<span x-text="range.max"></span>)</span>
+                  </button>
+                </template>
               </div>
-            </div>
-            <div x-show="step === 4" x-collapse class="px-6 pb-6 space-y-4">
-              <p class="text-sm text-stone-500">Add this amount of BAC water to your vial to reconstitute the powder.</p>
-              <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-medium text-teal-800">Recommended:</span>
-                  <span class="font-mono font-semibold text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
-                </div>
-                <p class="text-sm text-teal-700">
-                  This gives you <span class="font-mono font-medium tooltip" data-tip="Milligrams of peptide per milliliter of solution" x-text="fmtConc(recommendation.concentration)"></span> mg/mL.
-                  Your doses will be <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> <span class="tooltip" data-tip="Marks on an insulin syringe. 100 units = 1 mL">units</span>.
-                </p>
-              </div>
-              <div>
-                <button @click="showWaterOptions = !showWaterOptions" class="text-sm text-stone-500 hover:text-stone-700 flex items-center gap-1">
-                  <span x-text="showWaterOptions ? 'Hide options' : 'Choose different amount'"></span>
-                  <svg class="w-4 h-4 transition-transform" :class="showWaterOptions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                  </svg>
-                </button>
-                <div x-show="showWaterOptions" x-collapse class="mt-4 space-y-3">
-                  <div class="flex flex-wrap gap-2">
-                    <template x-for="w in [0.5, 1, 1.5, 2, 2.5, 3]" :key="w">
-                      <button @click="waterMl = w" :class="waterMl === w ? 'active' : ''" class="pill-btn px-4 py-2 rounded-lg font-mono">
-                        <span x-text="w"></span> mL
-                      </button>
-                    </template>
-                  </div>
-                  <div class="text-sm text-stone-500">
-                    <span x-text="waterMl + ' mL'"></span> → <span class="font-mono" x-text="fmtConc(vialMg / waterMl)"></span> mg/mL
-                  </div>
-                </div>
-              </div>
-              <div class="flex gap-3">
-                <button @click="step = 3" class="btn-secondary flex-1 py-3 rounded-xl font-medium">Back</button>
-                <button @click="step = 5; currentDose = doseMin" class="btn-primary flex-[2] py-3 rounded-xl font-medium">Calculate</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 5: Result -->
-          <div x-show="step >= 5" class="card rounded-xl overflow-hidden">
-            <div class="px-4 py-2.5 flex items-center justify-between bg-teal-500">
+            </template>
+            <div class="bg-stone-50 rounded-lg p-3">
+              <p class="text-xs text-stone-500 mb-2">Or enter custom range:</p>
               <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-white text-teal-600">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
+                <div class="relative flex-1">
+                  <input type="number" x-model.number="doseMin" class="input-field w-full rounded-lg px-3 py-2 font-mono text-center text-sm" min="0.01" step="0.25">
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
                 </div>
-                <div class="font-medium text-white text-sm">Your Dose</div>
+                <span class="text-stone-400 text-sm">to</span>
+                <div class="relative flex-1">
+                  <input type="number" x-model.number="doseMax" class="input-field w-full rounded-lg px-3 py-2 font-mono text-center text-sm" min="0.01" step="0.25">
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
+                </div>
               </div>
             </div>
-            <div class="p-4 space-y-3">
-              <!-- Dose Input + Result Row -->
-              <div class="flex items-stretch gap-3">
-                <!-- Left: Target Dose -->
-                <div class="flex-1 bg-teal-50 rounded-xl p-3 text-center flex flex-col justify-center border-2 border-teal-200 border-dashed">
-                  <div class="text-xs text-teal-600 uppercase tracking-wide mb-1">Target Dose</div>
-                  <div class="flex items-center justify-center gap-2 mb-1">
-                    <button
-                      @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                      class="w-8 h-8 rounded-full bg-white hover:bg-teal-100 flex items-center justify-center text-teal-600 text-lg font-medium border border-teal-300 shadow-sm"
-                    >−</button>
-                    <div class="flex items-baseline gap-1 bg-white rounded-lg px-3 py-1 border border-teal-300 shadow-sm">
-                      <input
-                        type="number"
-                        x-model.number="currentDose"
-                        class="w-20 text-center font-mono text-3xl font-semibold text-stone-800 bg-transparent focus:outline-none"
-                        min="0.01"
-                        step="any"
-                        placeholder="2.5"
-                      >
-                      <span class="text-lg text-stone-500">mg</span>
-                    </div>
-                    <button
-                      @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                      class="w-8 h-8 rounded-full bg-white hover:bg-teal-100 flex items-center justify-center text-teal-600 text-lg font-medium border border-teal-300 shadow-sm"
-                    >+</button>
-                  </div>
-                  <div class="text-xs text-teal-500 mb-2">Enter your dose above</div>
-                  <!-- Quick dose buttons -->
-                  <div x-show="peptide.quickDoses && peptide.quickDoses.length" class="flex flex-wrap justify-center gap-1">
-                    <template x-for="d in peptide.quickDoses" :key="d">
-                      <button
-                        @click="currentDose = d"
-                        :class="currentDose === d ? 'bg-teal-500 text-white border-teal-500' : 'bg-white border-teal-200 text-teal-700'"
-                        class="px-2 py-0.5 rounded text-xs font-mono border"
-                        x-text="d"
-                      ></button>
-                    </template>
-                  </div>
-                </div>
-
-                <!-- Right: Result -->
-                <div class="flex-1 bg-stone-100 rounded-xl p-3 text-center flex flex-col justify-center">
-                  <div class="text-xs text-stone-500 uppercase tracking-wide mb-1">Draw</div>
-                  <div class="flex items-baseline justify-center gap-2">
-                    <span class="font-mono font-semibold text-4xl text-stone-800" x-text="fmt(units)"></span>
-                    <span class="text-lg text-stone-500 tooltip" data-tip="Marks on your insulin syringe">units</span>
-                  </div>
-                  <div class="text-sm text-stone-400 mt-1">
-                    <span class="font-mono" x-text="fmt(ml, 3)"></span> mL
-                  </div>
-                </div>
-              </div>
-
-              <!-- Warnings -->
-              <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-sm text-amber-800">
-                ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units). Consider splitting the dose.
-              </div>
-              <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-sm text-blue-800">
-                ℹ️ Small volumes (&lt;5 units) can be hard to measure accurately.
-              </div>
-
-              <!-- Syringe Size Toggle + Visualization -->
-              <div class="space-y-1">
-                <div class="flex items-center justify-center gap-3">
-                  <span class="text-xs text-stone-500">Syringe:</span>
-                  <div class="flex gap-1">
-                    <button
-                      @click="syringeSize = '0.5'"
-                      :class="syringeSize === '0.5' ? 'active' : ''"
-                      class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
-                    >0.5 mL</button>
-                    <button
-                      @click="syringeSize = '1.0'"
-                      :class="syringeSize === '1.0' ? 'active' : ''"
-                      class="pill-btn px-3 py-1 rounded-lg text-xs font-mono"
-                    >1.0 mL</button>
-                  </div>
-                </div>
-                <div class="flex justify-center" x-html="syringeSvg"></div>
-              </div>
-
-              <!-- Stats -->
-              <div class="grid grid-cols-3 gap-2 text-sm">
-                <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
-                  <span class="text-stone-400 block text-xs tooltip" data-tip="mg of peptide per mL of solution">Concentration</span>
-                  <div class="font-mono text-stone-700 font-medium" x-text="fmtConc(concentration) + ' mg/mL'"></div>
-                </div>
-                <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
-                  <span class="text-stone-400 block text-xs tooltip" data-tip="How many doses at this amount per vial">Doses/vial</span>
-                  <div class="font-mono text-stone-700 font-medium" x-text="dosesPerVial || '—'"></div>
-                </div>
-                <div class="bg-stone-50 rounded-lg px-3 py-2 text-center">
-                  <span class="text-stone-400 block text-xs tooltip" data-tip="Insulin syringe size (0.5mL = 50 units max)">Syringe</span>
-                  <div class="font-mono text-stone-700 font-medium" x-text="syringeSize + ' mL'"></div>
-                </div>
-              </div>
-
-              <!-- Save Setup Button -->
-              <div class="pt-2 border-t border-stone-100">
-                <button
-                  @click="saveSetupGuided()"
-                  x-show="!isCurrentSetupSaved()"
-                  class="w-full py-2.5 rounded-lg text-sm font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center gap-2"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                  </svg>
-                  Save this setup
-                </button>
-                <div x-show="isCurrentSetupSaved()" class="text-center text-sm text-teal-600 py-2">
-                  <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  Setup saved
-                </div>
-              </div>
+            <div class="flex gap-2">
+              <button @click="wizardBack()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">Back</button>
+              <button @click="wizardNext(); waterMl = recommendation.waterMl" class="btn-primary flex-[2] py-2.5 rounded-lg font-medium">Continue</button>
             </div>
           </div>
-
         </div>
 
-      </div>
-    </template>
-
-    <!-- ==================== QUICK CALCULATOR MODE ==================== -->
-    <template x-if="mode === 'quick'">
-      <div class="max-w-xl mx-auto px-4 py-4 md:py-6">
-
-        <!-- Header with Mode Toggle -->
-        <header class="flex items-center justify-between mb-3">
-          <h1 class="font-display text-xl text-stone-800">Peptide Calculator</h1>
-          <div class="inline-flex bg-stone-100 rounded-lg p-0.5">
-            <button @click="startNewSetup()" class="px-3 py-1 rounded-md text-xs font-medium text-stone-500 hover:text-stone-700">
-              Guided
-            </button>
-            <button class="px-3 py-1 rounded-md text-xs font-medium bg-white shadow-sm text-stone-800">
-              Quick
-            </button>
-          </div>
-        </header>
-
-        <!-- Unified Calculator Card -->
-        <div class="card rounded-xl overflow-hidden">
-          <!-- Config Row -->
-          <div class="px-4 py-2.5 bg-stone-50 border-b border-stone-100 overflow-x-auto">
-            <div class="flex items-center gap-4 text-sm whitespace-nowrap">
-              <div class="flex items-center gap-2">
-                <span class="text-stone-500">Peptide</span>
-                <div class="relative">
-                  <input
-                    type="text"
-                    list="peptide-list"
-                    :value="peptideId === 'other' ? customPeptideName : PEPTIDES[peptideId]?.name"
-                    @input="handlePeptideInput($event.target.value)"
-                    @change="handlePeptideInput($event.target.value)"
-                    placeholder="Select or type..."
-                    class="bg-white border border-stone-200 rounded px-3 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-36"
-                  >
-                  <datalist id="peptide-list">
-                    <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
-                      <option :value="PEPTIDES[p].name"></option>
-                    </template>
-                  </datalist>
-                </div>
+        <!-- Step 4: BAC Water -->
+        <div x-show="wizardStep >= 4" class="card rounded-xl overflow-hidden">
+          <div
+            class="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+            :class="wizardStep === 4 ? 'bg-white' : 'bg-stone-50'"
+            @click="wizardStep = 4"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-stone-200 text-stone-600">
+                4
               </div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-stone-500">Vial</span>
-                <input type="number" x-model.number="vialMg" @input="onVialChange()"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-16 font-mono text-center focus:outline-none focus:border-teal-400" min="1" step="1">
-                <span class="text-stone-500">mg</span>
-              </div>
-              <div class="flex items-center gap-1.5 whitespace-nowrap">
-                <span class="text-stone-500">Water</span>
-                <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
-                <span class="text-stone-500">mL</span>
-              </div>
+              <div class="font-medium text-stone-800 text-sm">BAC Water</div>
             </div>
           </div>
-
-          <!-- Main Calculator -->
-          <div class="px-4 py-3 space-y-3">
-            <!-- Dose Row -->
-            <div class="flex items-center justify-center gap-4">
-              <div class="flex flex-col items-center gap-1">
-                <span class="text-xs text-stone-400 uppercase tracking-wide">Target Dose</span>
+          <div x-show="wizardStep === 4" x-collapse class="px-4 pb-4 space-y-3">
+            <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-medium text-teal-800 text-sm">Recommended:</span>
+                <span class="font-mono font-semibold text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
+              </div>
+              <p class="text-xs text-teal-700">
+                Gives <span class="font-mono font-medium" x-text="fmtConc(recommendation.concentration)"></span> mg/mL.
+                Doses: <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> units.
+              </p>
+            </div>
+            <div>
+              <button @click="if(showWaterOptions) waterMl = recommendation.waterMl; showWaterOptions = !showWaterOptions" class="text-sm text-stone-500 hover:text-stone-700 flex items-center gap-1">
+                <span x-text="showWaterOptions ? 'Use recommended' : 'Choose different amount'"></span>
+                <svg class="w-4 h-4 transition-transform" :class="showWaterOptions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <div x-show="showWaterOptions" x-collapse class="mt-3">
                 <div class="flex items-center gap-2">
-                  <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                    class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
-                  <div class="flex items-baseline gap-1 bg-white border border-stone-200 rounded-lg px-3 py-1.5 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
-                    <input type="number" x-model.number="currentDose"
-                      class="w-14 text-center font-mono text-2xl font-semibold text-stone-800 bg-transparent focus:outline-none"
-                      min="0.01" step="any" placeholder="2.5">
-                    <span class="text-sm text-stone-400">mg</span>
+                  <div class="relative">
+                    <input type="number" x-model.number="waterMl" class="input-field w-20 rounded-lg px-3 py-2 font-mono text-center" min="0.1" step="0.1" placeholder="2">
                   </div>
-                  <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                    class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-center gap-1">
-                <span class="text-xs text-stone-400 uppercase tracking-wide">Draw</span>
-                <div class="flex items-center gap-3 bg-stone-100 rounded-lg px-4 py-2">
-                  <span class="text-stone-400">=</span>
-                  <div class="flex items-baseline gap-1.5">
-                    <span class="font-mono font-bold text-2xl text-teal-600" x-text="fmt(units)"></span>
-                    <span class="text-sm text-stone-600">units</span>
-                  </div>
-                  <span class="text-stone-400 text-sm">(<span class="font-mono" x-text="fmt(ml, 3)"></span> mL)</span>
+                  <span class="text-stone-600 font-medium">mL</span>
+                  <span class="text-stone-400">→</span>
+                  <span class="text-stone-600"><span class="font-mono" x-text="fmtConc(vialMg / waterMl)"></span> mg/mL</span>
                 </div>
               </div>
             </div>
-
-            <!-- Quick Doses -->
-            <div x-show="peptide.quickDoses && peptide.quickDoses.length" class="flex flex-wrap justify-center gap-1.5">
-              <template x-for="d in peptide.quickDoses" :key="d">
-                <button @click="currentDose = d"
-                  :class="currentDose === d ? 'bg-teal-500 text-white border-teal-500' : 'bg-white border-stone-200 text-stone-600 hover:border-teal-400'"
-                  class="px-2.5 py-0.5 rounded-full text-xs font-mono border transition-colors"
-                  x-text="d + ' mg'"></button>
-              </template>
-            </div>
-
-            <!-- Warnings -->
-            <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800 text-center">
-              ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units)
-            </div>
-            <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800 text-center">
-              ℹ️ Small volume – may be hard to measure accurately
-            </div>
-
-            <!-- Syringe -->
-            <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
-          </div>
-
-          <!-- Footer -->
-          <div class="px-4 py-2.5 bg-stone-50 border-t border-stone-100 flex items-start justify-between">
-            <div class="flex flex-col gap-1">
-              <span class="text-xs text-stone-400">Syringe</span>
-              <div class="flex">
-                <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
-                  class="px-2.5 py-1 rounded-l border font-mono text-xs transition-colors">0.5 mL</button>
-                <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
-                  class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
-              </div>
-            </div>
-            <div class="flex items-start gap-6">
-              <div class="flex flex-col gap-1 text-center">
-                <span class="text-xs text-stone-400">Concentration</span>
-                <span class="font-mono font-medium text-stone-700" x-text="fmtConc(concentration) + ' mg/mL'"></span>
-              </div>
-              <div class="flex flex-col gap-1 text-center">
-                <span class="text-xs text-stone-400">Doses/Vial</span>
-                <span class="font-mono font-medium text-stone-700" x-text="dosesPerVial || '—'"></span>
-              </div>
+            <div class="flex gap-2">
+              <button @click="wizardBack()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">Back</button>
+              <button @click="completeWizard()" class="btn-primary flex-[2] py-2.5 rounded-lg font-medium">Done</button>
             </div>
           </div>
         </div>
 
       </div>
-    </template>
 
+      <!-- ==================== MAIN CALCULATOR CARD ==================== -->
+      <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
+        <!-- Config Row -->
+        <div class="px-4 py-2.5 bg-stone-50 border-b border-stone-100">
+          <div class="flex items-center gap-4 text-sm">
+            <div class="flex items-center gap-1.5">
+              <span class="text-stone-500">Peptide</span>
+              <div class="relative">
+                <input
+                  type="text"
+                  list="peptide-list-main"
+                  :value="peptideId === 'other' ? customPeptideName : PEPTIDES[peptideId]?.name"
+                  @input="handlePeptideInput($event.target.value)"
+                  @change="handlePeptideInput($event.target.value)"
+                  placeholder="Select..."
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-32 text-sm"
+                >
+                <datalist id="peptide-list-main">
+                  <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
+                    <option :value="PEPTIDES[p].name"></option>
+                  </template>
+                </datalist>
+              </div>
+            </div>
+            <div class="w-px h-6 bg-stone-200"></div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-stone-500">Vial</span>
+              <input type="number" x-model.number="vialMg" @input="onVialChange()"
+                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="1" step="1">
+              <span class="text-stone-500">mg</span>
+            </div>
+            <div class="w-px h-6 bg-stone-200"></div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-stone-500 whitespace-nowrap">BAC Water</span>
+              <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
+                class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center text-sm focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
+              <span class="text-stone-500">mL</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Calculator -->
+        <div class="px-4 py-4 space-y-4">
+          <!-- Dose Row -->
+          <div class="flex items-start justify-center gap-6">
+            <div class="flex flex-col items-center gap-1.5 w-48">
+              <span class="text-xs text-stone-400 uppercase tracking-wide">Target Dose</span>
+              <div class="flex items-center gap-2">
+                <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
+                  class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
+                <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1.5 w-32 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+                  <input type="number" x-model.number="currentDose"
+                    class="w-20 text-left font-mono text-2xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                    min="0.01" step="any" placeholder="2.5">
+                  <span class="text-sm text-stone-400">mg</span>
+                </div>
+                <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
+                  class="w-8 h-8 rounded-full bg-stone-100 hover:bg-teal-100 flex items-center justify-center text-stone-500 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
+              </div>
+              <!-- Quick Doses (under Target Dose) -->
+              <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex justify-center gap-2">
+                <template x-for="d in peptide.quickDoses.slice(0, 3)" :key="d">
+                  <button @click="currentDose = d"
+                    :class="currentDose === d ? 'text-teal-600 font-medium' : 'text-stone-400 hover:text-teal-500'"
+                    class="text-xs font-mono transition-colors"
+                    x-text="d + 'mg'"></button>
+                </template>
+              </div>
+            </div>
+
+            <div class="flex flex-col items-center gap-1.5 w-40">
+              <span class="text-xs text-stone-400 uppercase tracking-wide">Draw</span>
+              <div class="flex flex-col items-center bg-teal-50 border border-teal-200 rounded-xl px-6 py-3 w-full">
+                <div class="flex items-baseline gap-2">
+                  <span class="text-teal-400">=</span>
+                  <span class="font-mono font-bold text-3xl text-teal-600" x-text="fmt(units)"></span>
+                  <span class="text-sm font-medium text-teal-700">units</span>
+                </div>
+                <span class="text-teal-400 text-sm"><span class="font-mono" x-text="fmt(ml, 3)"></span> mL</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Warnings -->
+          <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800 text-center">
+            ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units)
+          </div>
+          <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800 text-center">
+            ℹ️ Small volume – may be hard to measure accurately
+          </div>
+
+          <!-- Syringe -->
+          <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-4 py-2.5 bg-stone-50 border-t border-stone-100 flex items-start justify-between">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-stone-400">Syringe</span>
+            <div class="flex">
+              <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                class="px-2.5 py-1 rounded-l border font-mono text-xs transition-colors">0.5 mL</button>
+              <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
+            </div>
+          </div>
+          <div class="flex items-start gap-5">
+            <div class="flex flex-col gap-1 text-center">
+              <span class="text-xs text-stone-400">Concentration</span>
+              <span class="font-mono font-medium text-stone-700" x-text="fmtConc(concentration) + ' mg/mL'"></span>
+            </div>
+            <div class="flex flex-col gap-1 text-center">
+              <span class="text-xs text-stone-400">Units/mg</span>
+              <span class="font-mono font-medium text-stone-700" x-text="fmt(100 / concentration)"></span>
+            </div>
+            <div class="flex flex-col gap-1 text-center">
+              <span class="text-xs text-stone-400">Max Dose</span>
+              <span class="font-mono font-medium text-stone-700" x-text="fmt(parseFloat(syringeSize) * concentration) + ' mg'"></span>
+            </div>
+            <div class="flex flex-col gap-1 text-center">
+              <span class="text-xs text-stone-400">Doses/Vial</span>
+              <span class="font-mono font-medium text-stone-700" x-text="dosesPerVial || '—'"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="px-4 py-2.5 border-t border-stone-100">
+          <button
+            @click="saveSetup()"
+            x-show="!isCurrentSetupSaved()"
+            class="w-full py-2 rounded-lg text-sm font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center gap-2 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+            </svg>
+            Save this setup
+          </button>
+          <div x-show="isCurrentSetupSaved()" class="text-center text-sm text-teal-600 py-1">
+            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            Setup saved
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </body>
 </html>
