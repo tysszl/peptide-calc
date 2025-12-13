@@ -921,9 +921,9 @@
         saveSetup() {
           if (this.isCurrentSetupSaved()) return;
 
-          // Format date as MM/DD
+          // Format date as D/M/YY
           const now = new Date();
-          const dateStr = `${now.getMonth() + 1}/${now.getDate()}`;
+          const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${String(now.getFullYear()).slice(-2)}`;
 
           const setup = {
             id: Date.now().toString(36),
@@ -1309,7 +1309,7 @@
         <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-b border-stone-100 overflow-x-auto">
           <div class="flex items-center gap-2 sm:gap-4 text-sm min-w-max">
             <div class="flex items-center gap-1 sm:gap-1.5">
-              <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
+              <span class="text-stone-500 text-xs sm:text-sm hidden sm:inline">Peptide</span>
               <div class="relative">
                 <input
                   type="text"
@@ -1317,7 +1317,7 @@
                   :value="peptideId === 'other' ? customPeptideName : PEPTIDES[peptideId]?.name"
                   @input="handlePeptideInput($event.target.value)"
                   @change="handlePeptideInput($event.target.value)"
-                  placeholder="Select..."
+                  placeholder="Peptide..."
                   class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-28 sm:w-32 text-sm"
                 >
                 <datalist id="peptide-list-main">
