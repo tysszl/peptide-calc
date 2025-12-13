@@ -1192,7 +1192,7 @@
                   <input type="number"
                     :value="peptide.commonVials.includes(vialMg) ? '' : vialMg"
                     @input="vialMg = $event.target.value ? Number($event.target.value) : null"
-                    class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none" min="1" step="1" placeholder="">
+                    class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none placeholder:text-stone-300" min="1" step="1" placeholder="__">
                   <span class="text-stone-500 text-sm">mg</span>
                 </div>
               </div>
