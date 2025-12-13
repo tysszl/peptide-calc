@@ -742,7 +742,7 @@
         // Form data
         peptideId: 'tirzepatide',
         customPeptideName: '',
-        vialMg: 10,
+        vialMg: 18,  // Default to Tirzepatide's common 18mg vial
         doseMin: 2.5,
         doseMax: 5,
         waterMl: 2,
@@ -812,9 +812,10 @@
             this.restoreLastUsed();
             this.showWizard = false;
           } else {
-            // First-time user: show wizard
+            // First-time user: show wizard and initialize with default peptide
             this.showWizard = true;
             this.wizardStep = 1;
+            this.selectPeptide('tirzepatide');
           }
 
           // Watch for changes to save
