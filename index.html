@@ -1370,24 +1370,35 @@
         <!-- Main Calculator -->
         <div class="px-3 sm:px-4 py-3 space-y-3">
           <!-- Dose + Draw Row -->
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          <div class="flex flex-col sm:flex-row items-stretch justify-center gap-3 sm:gap-4">
             <!-- Dose Input (with subtle container for balance) -->
-            <div class="flex items-center gap-2 bg-stone-50 border border-stone-100 rounded-xl px-3 py-2">
-              <span class="text-xs text-stone-500 uppercase tracking-wide whitespace-nowrap">Dose</span>
-              <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
-              <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1 px-2 w-24 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
-                <input type="number" x-model.number="currentDose"
-                  class="w-14 text-left font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
-                  min="0.01" step="any" placeholder="2.5">
-                <span class="text-xs text-stone-400">mg</span>
+            <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 sm:flex-1 sm:max-w-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-stone-500 uppercase tracking-wide whitespace-nowrap">Dose</span>
+                <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
+                  class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
+                <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1 px-2 w-24 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+                  <input type="number" x-model.number="currentDose"
+                    class="w-14 text-left font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                    min="0.01" step="any" placeholder="2.5">
+                  <span class="text-xs text-stone-400">mg</span>
+                </div>
+                <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
+                  class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
               </div>
-              <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
+              <!-- Quick Doses (inside Dose container) -->
+              <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex justify-center gap-3">
+                <template x-for="d in peptide.quickDoses.slice(0, 3)" :key="d">
+                  <button @click="currentDose = d"
+                    :class="currentDose === d ? 'text-teal-600 font-medium' : 'text-stone-400 hover:text-teal-500'"
+                    class="text-xs font-mono transition-colors"
+                    x-text="d + 'mg'"></button>
+                </template>
+              </div>
             </div>
 
             <!-- Draw Result -->
-            <div class="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
+            <div class="flex items-center justify-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 sm:flex-1 sm:max-w-xs">
               <span class="text-xs text-teal-600 uppercase tracking-wide">Draw</span>
               <div class="flex flex-col items-center">
                 <div class="flex items-baseline gap-1">
@@ -1397,26 +1408,6 @@
                 <span class="text-teal-500 text-xs"><span class="font-mono" x-text="fmt(ml, 3)"></span> mL</span>
               </div>
             </div>
-
-            <!-- Quick Doses (desktop only, inline) -->
-            <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="hidden sm:flex gap-2">
-              <template x-for="d in peptide.quickDoses.slice(0, 3)" :key="d">
-                <button @click="currentDose = d"
-                  :class="currentDose === d ? 'text-teal-600 font-medium' : 'text-stone-400 hover:text-teal-500'"
-                  class="text-xs font-mono transition-colors"
-                  x-text="d + 'mg'"></button>
-              </template>
-            </div>
-          </div>
-
-          <!-- Quick Doses (mobile only) -->
-          <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex sm:hidden justify-center gap-3">
-            <template x-for="d in peptide.quickDoses.slice(0, 3)" :key="d">
-              <button @click="currentDose = d"
-                :class="currentDose === d ? 'text-teal-600 font-medium' : 'text-stone-400 hover:text-teal-500'"
-                class="text-xs font-mono transition-colors"
-                x-text="d + 'mg'"></button>
-            </template>
           </div>
 
           <!-- Warnings -->
