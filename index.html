@@ -1313,20 +1313,17 @@
             <div class="flex items-center gap-1.5">
               <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
               <!-- Dropdown for preset peptides -->
-              <div x-show="peptideId !== 'other'" class="relative flex-1 sm:flex-none">
+              <div x-show="peptideId !== 'other'" class="flex-1 sm:flex-none">
                 <select
                   x-model="peptideId"
                   @change="if(peptideId !== 'other') selectPeptide(peptideId)"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full sm:w-36 appearance-none cursor-pointer"
+                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full sm:w-36"
                 >
                   <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
                     <option :value="p" x-text="PEPTIDES[p].name"></option>
                   </template>
                   <option value="other">Custom...</option>
                 </select>
-                <svg class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
               </div>
               <!-- Text input for custom peptide name -->
               <div x-show="peptideId === 'other'" class="flex items-center gap-1.5 flex-1 sm:flex-none">
