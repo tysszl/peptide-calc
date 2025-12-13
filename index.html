@@ -94,6 +94,16 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
     }
 
+    /* Prevent iOS zoom on input focus (requires 16px minimum) */
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+
+    /* Prevent double-tap zoom on buttons */
+    button {
+      touch-action: manipulation;
+    }
+
     /* Input styling */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
@@ -911,13 +921,18 @@
         saveSetup() {
           if (this.isCurrentSetupSaved()) return;
 
+          // Format date as MM/DD
+          const now = new Date();
+          const dateStr = `${now.getMonth() + 1}/${now.getDate()}`;
+
           const setup = {
             id: Date.now().toString(36),
-            name: `${this.peptide.name} ${this.vialMg}mg/${this.waterMl}mL`,
+            name: `${this.peptide.name} ${this.vialMg}mg – ${dateStr}`,
             peptideId: this.peptideId,
             vialMg: this.vialMg,
             waterMl: this.waterMl,
             syringeSize: this.syringeSize,
+            currentDose: this.currentDose,
             createdAt: new Date().toISOString()
           };
 
@@ -936,6 +951,14 @@
           this.syringeSize = setup.syringeSize;
           this.activeSetupId = setup.id;
           this.waterManuallySet = true; // Don't auto-update water when loading saved
+          // Restore saved dose or use default
+          if (setup.currentDose) {
+            this.currentDose = setup.currentDose;
+          } else {
+            // Fallback for old saved setups without currentDose
+            const p = PEPTIDES[setup.peptideId];
+            this.currentDose = p?.defaultDose || 2.5;
+          }
           // Set dose range based on peptide
           const p = PEPTIDES[setup.peptideId];
           if (p && p.doseRanges) {
@@ -943,7 +966,6 @@
             this.doseMin = firstRange?.min || 1;
             this.doseMax = firstRange?.max || 5;
           }
-          this.currentDose = p?.defaultDose || 1;
           this.showWizard = false;
           this.showSavedSetups = false;
         },
