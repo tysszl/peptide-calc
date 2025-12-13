@@ -1034,7 +1034,7 @@
 </head>
 <body>
   <div x-data="peptideApp()" x-init="init()" class="min-h-screen">
-    <div class="max-w-xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
+    <div class="max-w-xl sm:max-w-2xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
 
       <!-- ==================== HEADER ==================== -->
       <header class="flex items-center justify-between mb-3">
@@ -1306,7 +1306,7 @@
       <!-- ==================== MAIN CALCULATOR CARD ==================== -->
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
-        <div class="px-3 sm:px-4 py-2 bg-stone-50 border-b border-stone-100">
+        <div class="px-3 sm:px-5 py-2 bg-stone-50 border-b border-stone-100">
           <!-- Mobile: 2 rows, Desktop: 1 row -->
           <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 text-sm">
             <!-- Row 1 on mobile: Peptide -->
@@ -1367,9 +1367,9 @@
         <!-- Main Calculator -->
         <div class="px-3 sm:px-4 py-3 space-y-3">
           <!-- Dose + Draw Row -->
-          <div class="flex flex-col sm:flex-row items-stretch justify-center gap-3 sm:gap-4">
-            <!-- Dose Input (with subtle container for balance) -->
-            <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 sm:flex-1 sm:max-w-xs">
+          <!-- Dose Input (compact ~1/3) -->
+          <div class="flex flex-col sm:flex-row sm:items-stretch sm:justify-center sm:gap-4">
+            <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2.5 sm:flex-1 sm:max-w-xs">
               <div class="flex items-center gap-2">
                 <span class="text-xs text-stone-500 uppercase tracking-wide whitespace-nowrap">Dose</span>
                 <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
@@ -1383,40 +1383,40 @@
                 <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
                   class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
               </div>
-              <!-- Quick Doses (inside Dose container) -->
-              <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex justify-center gap-3">
+              <!-- Quick Doses -->
+              <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex justify-center gap-4">
                 <template x-for="d in peptide.quickDoses.slice(0, 3)" :key="d">
                   <button @click="currentDose = d"
                     :class="currentDose === d ? 'text-teal-600 font-medium' : 'text-stone-400 hover:text-teal-500'"
-                    class="text-xs font-mono transition-colors"
+                    class="text-xs font-mono transition-colors px-1"
                     x-text="d + 'mg'"></button>
                 </template>
               </div>
             </div>
 
-            <!-- Draw Result -->
-            <div class="flex items-center justify-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 sm:flex-1 sm:max-w-xs">
-              <span class="text-xs text-teal-600 uppercase tracking-wide">Draw</span>
-              <div class="flex flex-col items-center">
-                <div class="flex items-baseline gap-1">
-                  <span class="font-mono font-bold text-2xl text-teal-600" x-text="fmt(units)"></span>
-                  <span class="text-sm font-medium text-teal-700">units</span>
+            <!-- Draw Result + Syringe (~2/3) -->
+            <div class="flex flex-col bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 mt-2 sm:mt-0 sm:flex-1 sm:max-w-xs">
+              <div class="flex items-center justify-center gap-2 mb-2">
+                <span class="text-xs text-teal-600 uppercase tracking-wide">Draw</span>
+                <div class="flex flex-col items-center">
+                  <div class="flex items-baseline gap-1">
+                    <span class="font-mono font-bold text-2xl text-teal-600" x-text="fmt(units)"></span>
+                    <span class="text-sm font-medium text-teal-700">units</span>
+                  </div>
+                  <span class="text-teal-500 text-xs"><span class="font-mono" x-text="fmt(ml, 3)"></span> mL</span>
                 </div>
-                <span class="text-teal-500 text-xs"><span class="font-mono" x-text="fmt(ml, 3)"></span> mL</span>
               </div>
+              <!-- Warnings -->
+              <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-xs text-amber-800 text-center mb-2">
+                ⚠️ Exceeds syringe (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units)
+              </div>
+              <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-1.5 text-xs text-blue-800 text-center mb-2">
+                ℹ️ Small volume – hard to measure
+              </div>
+              <!-- Syringe inside Draw container -->
+              <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
             </div>
           </div>
-
-          <!-- Warnings -->
-          <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800 text-center">
-            ⚠️ Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units)
-          </div>
-          <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800 text-center">
-            ℹ️ Small volume – may be hard to measure accurately
-          </div>
-
-          <!-- Syringe -->
-          <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
         </div>
 
         <!-- Footer -->
