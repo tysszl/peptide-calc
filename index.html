@@ -418,6 +418,34 @@
     };
 
     // ============================================
+    // BLEND PRESETS
+    // ============================================
+    const BLENDS = {
+      'bpc-tb4': {
+        id: 'bpc-tb4',
+        name: 'BPC-157 + TB-4',
+        description: 'Recovery & healing stack',
+        components: [
+          { name: 'BPC-157', defaultMg: 12 },
+          { name: 'TB-4', defaultMg: 12 }
+        ],
+        quickDoses: [0.25, 0.5, 0.75],
+        defaultDose: 0.5
+      },
+      'custom-blend': {
+        id: 'custom-blend',
+        name: 'Custom Blend',
+        description: 'Enter your own blend',
+        components: [
+          { name: '', defaultMg: null },
+          { name: '', defaultMg: null }
+        ],
+        quickDoses: [],
+        defaultDose: 0.5
+      }
+    };
+
+    // ============================================
     // CALCULATIONS
     // ============================================
     function calculateConcentration(vialMg, waterMl) {
@@ -466,8 +494,8 @@
             maxUnits: Math.round(maxUnits * 10) / 10,
             // How close is minUnits to our target of 10?
             distanceFromTarget: Math.abs(minUnits - targetMinUnits),
-            // Is water amount reasonable?
-            isValidWater: waterMl >= 0.5 && waterMl <= 5,
+            // Is water amount reasonable? (vials typically hold max 3mL)
+            isValidWater: waterMl >= 0.5 && waterMl <= 3,
             // Does max dose fit in syringe?
             fitsInSyringe: maxUnits <= syringeUnits
           };
@@ -511,8 +539,8 @@
 
       for (const conc of allowedConcentrations) {
         const waterMl = vialMg / conc;
-        // Only allow reasonable water volumes (0.5 to 3.5 mL for standard vials)
-        if (waterMl >= 0.5 && waterMl <= 3.5) {
+        // Only allow reasonable water volumes (0.5 to 3 mL for standard vials)
+        if (waterMl >= 0.5 && waterMl <= 3) {
           return Math.round(waterMl * 100) / 100; // Round to 2 decimals
         }
       }
@@ -749,6 +777,14 @@
         syringeSize: '0.5',
         currentDose: 2.5,
 
+        // Blend data
+        isBlend: false,
+        blendId: null,
+        blendComponents: [
+          { name: '', mg: null },
+          { name: '', mg: null }
+        ],
+
         // Saved data
         storage: null,
         savedSetups: [],
@@ -764,7 +800,37 @@
           return PEPTIDES[this.peptideId] || PEPTIDES.other;
         },
 
+        // Blend computed properties
+        get blend() {
+          return this.blendId ? BLENDS[this.blendId] : null;
+        },
+
+        get blendTotalMg() {
+          if (!this.isBlend) return null;
+          return this.blendComponents.reduce((sum, c) => sum + (c.mg || 0), 0);
+        },
+
+        get blendConcentrations() {
+          // Individual concentration per peptide in blend (mg/mL each)
+          if (!this.isBlend || !this.waterMl) return null;
+          return this.blendComponents.map(c => (c.mg || 0) / this.waterMl);
+        },
+
+        get blendDoses() {
+          // Returns mg of each peptide for current draw, based on primary peptide's dose
+          if (!this.isBlend || !this.blendConcentrations || !this.blendConcentrations[0]) return null;
+          const primaryConc = this.blendConcentrations[0];
+          const mlNeeded = this.currentDose / primaryConc;
+          return this.blendComponents.map((c, i) => {
+            return Math.round(this.blendConcentrations[i] * mlNeeded * 1000) / 1000;
+          });
+        },
+
         get concentration() {
+          // For blends, use primary peptide concentration
+          if (this.isBlend && this.blendConcentrations) {
+            return this.blendConcentrations[0];
+          }
           return calculateConcentration(this.vialMg, this.waterMl);
         },
 
@@ -781,7 +847,11 @@
         },
 
         get recommendation() {
-          return recommendWater(this.vialMg, this.doseMin, this.doseMax, this.syringeSize === '0.5' ? 50 : 100);
+          // For blends, use primary peptide's mg for calculation since dose is per primary
+          const mgForCalc = this.isBlend && this.blendComponents[0]?.mg
+            ? this.blendComponents[0].mg
+            : this.vialMg;
+          return recommendWater(mgForCalc, this.doseMin, this.doseMax, this.syringeSize === '0.5' ? 50 : 100);
         },
 
         get recommendedWater() {
@@ -811,6 +881,7 @@
           if (this.storage.lastUsed) {
             this.restoreLastUsed();
             this.showWizard = false;
+            this.wizardStep = 5; // Completed state so button shows "Edit Setup"
           } else {
             // First-time user: show wizard and initialize with default peptide
             this.showWizard = true;
@@ -837,10 +908,18 @@
         },
 
         wizardBack() {
-          if (this.wizardStep > 1) this.wizardStep--;
+          if (this.wizardStep > 1) {
+            // For blends, skip step 2 (go from 3 to 1)
+            if (this.isBlend && this.wizardStep === 3) {
+              this.wizardStep = 1;
+            } else {
+              this.wizardStep--;
+            }
+          }
         },
 
         completeWizard() {
+          this.wizardStep = 5; // Completed state - shows all steps collapsed
           this.showWizard = false;
           this.currentDose = this.doseMin;
           this.storage.hasCompletedSetup = true;
@@ -849,14 +928,19 @@
 
         toggleWizard() {
           this.showWizard = !this.showWizard;
-          if (this.showWizard && this.wizardStep > 4) {
-            this.wizardStep = 1;
-          }
+        },
+
+        restartWizard() {
+          this.wizardStep = 1;
+          this.showWizard = true;
         },
 
         // Peptide selection
         selectPeptide(id) {
           this.peptideId = id;
+          // Exit blend mode when selecting a regular peptide
+          this.isBlend = false;
+          this.blendId = null;
           const p = PEPTIDES[id];
           if (p) {
             // For custom peptides with no commonVials, clear vialMg so input appears empty
@@ -874,6 +958,57 @@
             if (!this.waterManuallySet) {
               this.waterMl = this.recommendedWater;
             }
+          }
+        },
+
+        // Blend selection
+        selectBlend(id) {
+          this.isBlend = true;
+          this.blendId = id;
+          this.peptideId = 'other'; // Use 'other' for blend mode
+          const b = BLENDS[id];
+          if (b) {
+            this.blendComponents = b.components.map(c => ({
+              name: c.name,
+              mg: c.defaultMg
+            }));
+            // Calculate total vial mg from components
+            const totalMg = this.blendComponents.reduce((sum, c) => sum + (c.mg || 0), 0);
+            this.vialMg = totalMg || null;
+            // Set dose for blends (single dose, not a range)
+            const defaultDose = b.defaultDose || 0.5;
+            this.currentDose = defaultDose;
+            this.doseMin = defaultDose;
+            this.doseMax = defaultDose;
+            // Auto-update water recommendation based on PRIMARY peptide mg
+            const primaryMg = this.blendComponents[0]?.mg || totalMg;
+            if (!this.waterManuallySet && primaryMg) {
+              this.waterMl = recommendWaterSimple(primaryMg);
+            }
+          }
+        },
+
+        // Exit blend mode and return to regular peptide
+        exitBlendMode() {
+          this.isBlend = false;
+          this.blendId = null;
+          this.blendComponents = [
+            { name: '', mg: null },
+            { name: '', mg: null }
+          ];
+          this.selectPeptide('tirzepatide');
+        },
+
+        // Update a blend component (name or mg)
+        updateBlendComponent(index, field, value) {
+          this.blendComponents[index][field] = value;
+          // Auto-update total vial mg
+          const totalMg = this.blendComponents.reduce((sum, c) => sum + (c.mg || 0), 0);
+          this.vialMg = totalMg || null;
+          // Auto-update water recommendation based on PRIMARY peptide mg
+          const primaryMg = this.blendComponents[0]?.mg || totalMg;
+          if (!this.waterManuallySet && primaryMg) {
+            this.waterMl = recommendWaterSimple(primaryMg);
           }
         },
 
@@ -931,15 +1066,26 @@
           const now = new Date();
           const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${String(now.getFullYear()).slice(-2)}`;
 
+          // Generate name based on blend or peptide
+          const setupName = this.isBlend
+            ? `${this.blendComponents.map(c => c.name + ' ' + c.mg + 'mg').join(' + ')} – ${dateStr}`
+            : `${this.peptide.name} ${this.vialMg}mg – ${dateStr}`;
+
           const setup = {
             id: Date.now().toString(36),
-            name: `${this.peptide.name} ${this.vialMg}mg – ${dateStr}`,
+            name: setupName,
             peptideId: this.peptideId,
             vialMg: this.vialMg,
             waterMl: this.waterMl,
             syringeSize: this.syringeSize,
             currentDose: this.currentDose,
-            createdAt: new Date().toISOString()
+            doseMin: this.doseMin,
+            doseMax: this.doseMax,
+            createdAt: new Date().toISOString(),
+            // Blend fields
+            isBlend: this.isBlend,
+            blendId: this.blendId,
+            blendComponents: this.isBlend ? JSON.parse(JSON.stringify(this.blendComponents)) : null
           };
 
           this.savedSetups.push(setup);
@@ -957,6 +1103,23 @@
           this.syringeSize = setup.syringeSize;
           this.activeSetupId = setup.id;
           this.waterManuallySet = true; // Don't auto-update water when loading saved
+          this.wizardStep = 5; // Set to completed state so Edit Setup works
+          this.showWizard = false;
+
+          // Restore blend state if present
+          if (setup.isBlend) {
+            this.isBlend = true;
+            this.blendId = setup.blendId;
+            this.blendComponents = setup.blendComponents || [
+              { name: '', mg: null },
+              { name: '', mg: null }
+            ];
+          } else {
+            this.isBlend = false;
+            this.blendId = null;
+            this.blendComponents = [{ name: '', mg: null }, { name: '', mg: null }];
+          }
+
           // Restore saved dose or use default
           if (setup.currentDose) {
             this.currentDose = setup.currentDose;
@@ -965,13 +1128,21 @@
             const p = PEPTIDES[setup.peptideId];
             this.currentDose = p?.defaultDose || 2.5;
           }
-          // Set dose range based on peptide
-          const p = PEPTIDES[setup.peptideId];
-          if (p && p.doseRanges) {
-            const firstRange = Object.values(p.doseRanges)[0];
-            this.doseMin = firstRange?.min || 1;
-            this.doseMax = firstRange?.max || 5;
+
+          // Restore dose range from saved setup, or use peptide defaults
+          if (setup.doseMin !== undefined && setup.doseMax !== undefined) {
+            this.doseMin = setup.doseMin;
+            this.doseMax = setup.doseMax;
+          } else {
+            // Fallback for old saved setups without dose range
+            const p = PEPTIDES[setup.peptideId];
+            if (p && p.doseRanges) {
+              const firstRange = Object.values(p.doseRanges)[0];
+              this.doseMin = firstRange?.min || 1;
+              this.doseMax = firstRange?.max || 5;
+            }
           }
+
           this.showWizard = false;
           this.showSavedSetups = false;
         },
@@ -994,7 +1165,10 @@
             vialMg: this.vialMg,
             waterMl: this.waterMl,
             syringeSize: this.syringeSize,
-            currentDose: this.currentDose
+            currentDose: this.currentDose,
+            isBlend: this.isBlend,
+            blendId: this.blendId,
+            blendComponents: this.isBlend ? JSON.parse(JSON.stringify(this.blendComponents)) : null
           };
           Storage.save(this.storage);
         },
@@ -1008,6 +1182,16 @@
             this.syringeSize = lu.syringeSize || '0.5';
             this.currentDose = lu.currentDose || 2.5;
             this.waterManuallySet = true; // Don't auto-update on restore
+
+            // Restore blend state if present
+            if (lu.isBlend) {
+              this.isBlend = true;
+              this.blendId = lu.blendId;
+              this.blendComponents = lu.blendComponents || [
+                { name: '', mg: null },
+                { name: '', mg: null }
+              ];
+            }
           }
         },
 
@@ -1087,17 +1271,25 @@
             </div>
           </div>
           <!-- Setup Steps Toggle -->
-          <button
-            @click="toggleWizard()"
-            class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors"
-            :class="showWizard ? 'bg-teal-500 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-            </svg>
-            <span class="hidden sm:inline" x-text="showWizard ? 'Hide' : 'Guided Setup'"></span>
-            <span class="sm:hidden" x-text="showWizard ? 'Hide' : 'Setup'"></span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              x-show="wizardStep === 5"
+              @click="startNewSetup()"
+              class="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+            >
+              New Setup
+            </button>
+            <button
+              @click="toggleWizard()"
+              class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+              :class="showWizard ? 'bg-teal-500 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+              </svg>
+              <span x-text="showWizard ? 'Hide' : (wizardStep === 5 ? 'Edit Setup' : 'Guided Setup')"></span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1121,38 +1313,102 @@
               </div>
               <div class="font-medium text-stone-800 text-sm">Peptide</div>
             </div>
-            <div x-show="wizardStep > 1" class="text-sm text-stone-600" x-text="peptide.name"></div>
+            <div x-show="wizardStep > 1" class="text-sm text-stone-600" x-text="isBlend ? blendComponents.map(c => (c.name || '?') + ' ' + (c.mg || '?') + 'mg').join(' + ') : peptide.name"></div>
           </div>
           <div x-show="wizardStep === 1" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
-            <p class="text-sm text-stone-500">Select the peptide you're using</p>
-            <div class="flex flex-wrap gap-2">
-              <template x-for="p in ['tirzepatide', 'retatrutide']" :key="p">
-                <button
-                  @click="selectPeptide(p)"
-                  :class="peptideId === p ? 'active' : ''"
-                  class="pill-btn px-4 py-2 rounded-lg text-sm font-medium"
-                  x-text="PEPTIDES[p].name"
-                ></button>
-              </template>
-              <!-- Custom peptide input -->
-              <div class="relative">
-                <input
-                  type="text"
-                  x-model="customPeptideName"
-                  @focus="if(peptideId !== 'other') selectPeptide('other')"
-                  @input="if(peptideId !== 'other') selectPeptide('other')"
-                  placeholder="Custom"
-                  class="pill-btn px-4 py-2 rounded-lg text-sm font-medium w-28 text-center focus:outline-none"
-                  :class="peptideId === 'other' ? 'active' : ''"
-                >
+            <!-- Regular peptide selection (not blend mode) -->
+            <template x-if="!isBlend">
+              <div class="space-y-3">
+                <p class="text-sm text-stone-500">Select the peptide you're using</p>
+                <div class="flex flex-wrap gap-2">
+                  <template x-for="p in ['tirzepatide', 'retatrutide']" :key="p">
+                    <button
+                      @click="selectPeptide(p)"
+                      :class="peptideId === p ? 'active' : ''"
+                      class="pill-btn px-4 py-2 rounded-lg text-sm font-medium"
+                      x-text="PEPTIDES[p].name"
+                    ></button>
+                  </template>
+                  <!-- Custom peptide input -->
+                  <div class="relative">
+                    <input
+                      type="text"
+                      x-model="customPeptideName"
+                      @focus="if(peptideId !== 'other') selectPeptide('other')"
+                      @input="if(peptideId !== 'other') selectPeptide('other')"
+                      placeholder="Custom"
+                      class="pill-btn px-4 py-2 rounded-lg text-sm font-medium w-28 text-center focus:outline-none"
+                      :class="peptideId === 'other' ? 'active' : ''"
+                    >
+                  </div>
+                  <!-- Blend button - visually distinct -->
+                  <div class="border-l border-stone-200 pl-2 ml-1">
+                    <button
+                      @click="selectBlend('custom-blend')"
+                      class="pill-btn px-4 py-2 rounded-lg text-sm font-medium border-dashed"
+                    >Blend</button>
+                  </div>
+                </div>
+                <button @click="wizardNext()" class="btn-primary w-full py-2.5 rounded-lg font-medium">Continue</button>
               </div>
-            </div>
-            <button @click="wizardNext()" class="btn-primary w-full py-2.5 rounded-lg font-medium">Continue</button>
+            </template>
+
+            <!-- Blend input mode -->
+            <template x-if="isBlend">
+              <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                  <button @click="exitBlendMode()" class="text-stone-400 hover:text-stone-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                  </button>
+                  <p class="text-sm text-stone-500">Enter your blend peptides</p>
+                </div>
+
+                <!-- Blend inputs -->
+                <div class="space-y-2">
+                  <template x-for="(comp, idx) in blendComponents" :key="idx">
+                    <div class="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        :value="comp.name"
+                        @input="updateBlendComponent(idx, 'name', $event.target.value)"
+                        :placeholder="'Peptide ' + (idx + 1)"
+                        class="flex-1 px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                      >
+                      <div class="relative">
+                        <input
+                          type="text" inputmode="decimal"
+                          :value="comp.mg"
+                          @change="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
+                          @blur="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
+                          placeholder="mg"
+                          class="w-20 px-3 py-2 rounded-lg border border-stone-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                        >
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">mg</span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Show total when valid -->
+                <div x-show="blendTotalMg" class="text-sm text-stone-600 bg-stone-50 rounded-lg px-3 py-2">
+                  Total: <span class="font-mono font-medium" x-text="blendTotalMg + ' mg'"></span>
+                  <span class="text-stone-400" x-text="'(' + blendComponents.map(c => c.name || '?').join(' + ') + ')'"></span>
+                </div>
+
+                <button
+                  @click="wizardStep = 3"
+                  :disabled="!blendTotalMg || !blendComponents[0].name || !blendComponents[1].name"
+                  class="btn-primary w-full py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >Continue</button>
+              </div>
+            </template>
           </div>
         </div>
 
-        <!-- Step 2: Vial Size -->
-        <div x-show="wizardStep >= 2" class="card rounded-xl overflow-hidden">
+        <!-- Step 2: Vial Size (hidden for blends) -->
+        <div x-show="wizardStep >= 2 && !isBlend" class="card rounded-xl overflow-hidden">
           <div
             class="px-3 sm:px-4 py-2.5 flex items-center justify-between cursor-pointer"
             :class="wizardStep === 2 ? 'bg-white' : 'bg-stone-50'"
@@ -1171,32 +1427,57 @@
             <div x-show="wizardStep > 2" class="text-sm font-mono text-stone-600" x-text="vialMg + ' mg'"></div>
           </div>
           <div x-show="wizardStep === 2" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
-            <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
-            <div class="flex flex-wrap items-center gap-2">
-              <template x-for="size in peptide.commonVials" :key="size">
-                <button
-                  @click="vialMg = size"
-                  :class="vialMg === size ? 'active' : ''"
-                  class="pill-btn px-4 py-2 rounded-lg font-mono font-medium"
-                >
-                  <span x-text="size"></span><span class="text-stone-400 ml-1">mg</span>
-                </button>
-              </template>
-              <!-- Custom vial input with label -->
-              <div class="flex items-center gap-1" :class="peptide.commonVials.length > 0 ? 'border-l border-stone-200 pl-2 ml-1' : ''">
-                <span x-show="peptide.commonVials.length > 0" class="text-xs text-stone-400">or</span>
-                <div
-                  class="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-colors"
-                  :class="!peptide.commonVials.includes(vialMg) && vialMg ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
-                >
-                  <input type="number"
-                    :value="peptide.commonVials.includes(vialMg) ? '' : vialMg"
-                    @input="vialMg = $event.target.value ? Number($event.target.value) : null"
-                    class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none placeholder:text-stone-300" min="1" step="1" placeholder="__">
-                  <span class="text-stone-500 text-sm">mg</span>
+            <!-- Regular peptide vial selection -->
+            <template x-if="!isBlend">
+              <div class="space-y-3">
+                <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <template x-for="size in peptide.commonVials" :key="size">
+                    <button
+                      @click="vialMg = size"
+                      :class="vialMg === size ? 'active' : ''"
+                      class="pill-btn px-4 py-2 rounded-lg font-mono font-medium"
+                    >
+                      <span x-text="size"></span><span class="text-stone-400 ml-1">mg</span>
+                    </button>
+                  </template>
+                  <!-- Custom vial input with label -->
+                  <div class="flex items-center gap-1" :class="peptide.commonVials.length > 0 ? 'border-l border-stone-200 pl-2 ml-1' : ''">
+                    <span x-show="peptide.commonVials.length > 0" class="text-xs text-stone-400">or</span>
+                    <div
+                      class="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-colors"
+                      :class="!peptide.commonVials.includes(vialMg) && vialMg ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
+                    >
+                      <input type="text" inputmode="decimal"
+                        :value="peptide.commonVials.includes(vialMg) ? '' : vialMg"
+                        @change="vialMg = $event.target.value ? Number($event.target.value) : null"
+                        @blur="vialMg = $event.target.value ? Number($event.target.value) : null"
+                        class="w-12 font-mono text-center text-sm bg-transparent focus:outline-none placeholder:text-stone-300" placeholder="__">
+                      <span class="text-stone-500 text-sm">mg</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
+
+            <!-- Blend total display (auto-calculated) -->
+            <template x-if="isBlend">
+              <div class="space-y-3">
+                <p class="text-sm text-stone-500">Total from blend components</p>
+                <div class="bg-stone-50 rounded-lg p-3">
+                  <div class="text-2xl font-mono font-semibold text-stone-800" x-text="blendTotalMg + ' mg'"></div>
+                  <div class="text-sm text-stone-500 mt-1">
+                    <template x-for="(comp, idx) in blendComponents" :key="idx">
+                      <span>
+                        <span x-text="comp.mg + 'mg ' + comp.name"></span>
+                        <span x-show="idx < blendComponents.length - 1"> + </span>
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
             <div class="flex gap-2">
               <button @click="wizardBack()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">Back</button>
               <button @click="wizardNext()" class="btn-primary flex-[2] py-2.5 rounded-lg font-medium">Continue</button>
@@ -1219,40 +1500,76 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
               </div>
-              <div class="font-medium text-stone-800 text-sm">Dose Range</div>
+              <div class="font-medium text-stone-800 text-sm" x-text="isBlend ? 'Target Dose' : 'Dose Range'"></div>
             </div>
-            <div x-show="wizardStep > 3" class="text-sm font-mono text-stone-600" x-text="doseMin + '–' + doseMax + ' mg'"></div>
+            <div x-show="wizardStep > 3" class="text-sm font-mono text-stone-600" x-text="isBlend ? currentDose + ' mg' : doseMin + '–' + doseMax + ' mg'"></div>
           </div>
           <div x-show="wizardStep === 3" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
-            <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
-            <template x-if="Object.keys(peptide.doseRanges).length > 0">
-              <div class="flex flex-wrap gap-2">
-                <template x-for="(range, key) in peptide.doseRanges" :key="key">
-                  <button
-                    @click="applyDoseRange(range)"
-                    :class="doseMin === range.min && doseMax === range.max ? 'active' : ''"
-                    class="pill-btn px-3 py-1.5 rounded-lg text-sm"
-                  >
-                    <span x-text="range.label"></span>
-                    <span class="text-stone-400 ml-1 text-xs">(<span x-text="range.min"></span>–<span x-text="range.max"></span>)</span>
-                  </button>
+            <!-- Regular peptides: Dose Range -->
+            <template x-if="!isBlend">
+              <div class="space-y-3">
+                <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
+                <template x-if="Object.keys(peptide.doseRanges).length > 0">
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="(range, key) in peptide.doseRanges" :key="key">
+                      <button
+                        @click="applyDoseRange(range)"
+                        :class="doseMin === range.min && doseMax === range.max ? 'active' : ''"
+                        class="pill-btn px-3 py-1.5 rounded-lg text-sm"
+                      >
+                        <span x-text="range.label"></span>
+                        <span class="text-stone-400 ml-1 text-xs">(<span x-text="range.min"></span>–<span x-text="range.max"></span>)</span>
+                      </button>
+                    </template>
+                  </div>
                 </template>
+                <div class="bg-stone-50 rounded-lg p-3">
+                  <p class="text-xs text-stone-500 mb-2">Or enter custom range:</p>
+                  <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                      <input type="text" inputmode="decimal" :value="doseMin" @change="doseMin = parseFloat($event.target.value) || 0.5" @blur="doseMin = parseFloat($event.target.value) || 0.5" class="input-field w-full rounded-lg px-3 py-2 font-mono text-center text-sm">
+                      <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
+                    </div>
+                    <span class="text-stone-400 text-sm">to</span>
+                    <div class="relative flex-1">
+                      <input type="text" inputmode="decimal" :value="doseMax" @change="doseMax = parseFloat($event.target.value) || 0.5" @blur="doseMax = parseFloat($event.target.value) || 0.5" class="input-field w-full rounded-lg px-3 py-2 font-mono text-center text-sm">
+                      <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </template>
-            <div class="bg-stone-50 rounded-lg p-3">
-              <p class="text-xs text-stone-500 mb-2">Or enter custom range:</p>
-              <div class="flex items-center gap-2">
-                <div class="relative flex-1">
-                  <input type="number" x-model.number="doseMin" class="input-field w-full rounded-lg px-3 py-2 font-mono text-center text-sm" min="0.01" step="0.25">
-                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
-                </div>
-                <span class="text-stone-400 text-sm">to</span>
-                <div class="relative flex-1">
-                  <input type="number" x-model.number="doseMax" class="input-field w-full rounded-lg px-3 py-2 font-mono text-center text-sm" min="0.01" step="0.25">
-                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
+
+            <!-- Blends: Single target dose -->
+            <template x-if="isBlend">
+              <div class="space-y-3">
+                <p class="text-sm text-stone-500">What dose of <span class="font-medium" x-text="blendComponents[0]?.name || 'primary peptide'"></span> per injection?</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <template x-for="d in [0.25, 0.5, 0.75, 1]" :key="d">
+                    <button
+                      @click="currentDose = d; doseMin = d; doseMax = d"
+                      :class="currentDose === d ? 'active' : ''"
+                      class="pill-btn px-4 py-2 rounded-lg text-sm font-medium"
+                    >
+                      <span class="font-mono" x-text="d"></span> mg
+                    </button>
+                  </template>
+                  <div class="border-l border-stone-200 pl-2 ml-1 flex items-center gap-1.5">
+                    <span class="text-xs text-stone-400">or</span>
+                    <div class="relative">
+                      <input type="text" inputmode="decimal"
+                        :value="[0.25, 0.5, 0.75, 1].includes(currentDose) ? '' : currentDose"
+                        @change="currentDose = $event.target.value ? Number($event.target.value) : null; doseMin = currentDose; doseMax = currentDose"
+                        @blur="if($event.target.value) { currentDose = Number($event.target.value); doseMin = currentDose; doseMax = currentDose }"
+                        :class="![0.25, 0.5, 0.75, 1].includes(currentDose) && currentDose ? 'border-teal-500 bg-teal-50' : 'border-stone-200'"
+                        class="w-24 rounded-lg px-2 py-1.5 font-mono text-center text-sm border focus:outline-none focus:border-teal-500" placeholder="__">
+                      <span class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">mg</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
+
             <div class="flex gap-2">
               <button @click="wizardBack()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">Back</button>
               <button @click="wizardNext(); waterMl = recommendation.waterMl" class="btn-primary flex-[2] py-2.5 rounded-lg font-medium">Continue</button>
@@ -1268,25 +1585,31 @@
             @click="wizardStep = 4"
           >
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-stone-200 text-stone-600">
+              <div x-show="wizardStep > 4" class="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div x-show="wizardStep === 4" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-stone-200 text-stone-600">
                 4
               </div>
               <div class="font-medium text-stone-800 text-sm">BAC Water</div>
             </div>
+            <div x-show="wizardStep > 4" class="text-sm font-mono text-stone-600" x-text="waterMl + ' mL'"></div>
           </div>
           <div x-show="wizardStep === 4" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
             <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
               <div class="flex items-center gap-2 mb-1">
-                <span class="font-medium text-teal-800 text-sm">Recommended:</span>
-                <span class="font-mono font-semibold text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
+                <span class="font-medium text-teal-800 text-sm" x-text="waterManuallySet ? 'Current:' : 'Recommended:'"></span>
+                <span class="font-mono font-semibold text-teal-700" x-text="(waterManuallySet ? waterMl : recommendation.waterMl) + ' mL'"></span>
               </div>
               <p class="text-xs text-teal-700">
-                Gives <span class="font-mono font-medium" x-text="fmtConc(recommendation.concentration)"></span> mg/mL.
-                Doses: <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> units.
+                Gives <span class="font-mono font-medium" x-text="fmtConc((waterManuallySet ? (isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl : recommendation.concentration))"></span> mg/mL.
+                Doses: <span class="font-mono" x-text="waterManuallySet ? Math.round((doseMin / ((isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl)) * 100) : recommendation.minUnits"></span>–<span class="font-mono" x-text="waterManuallySet ? Math.round((doseMax / ((isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl)) * 100) : recommendation.maxUnits"></span> units.
               </p>
             </div>
             <div>
-              <button @click="if(showWaterOptions) waterMl = recommendation.waterMl; showWaterOptions = !showWaterOptions" class="text-sm text-stone-500 hover:text-stone-700 flex items-center gap-1">
+              <button @click="if(showWaterOptions) { waterMl = recommendation.waterMl; waterManuallySet = false; } showWaterOptions = !showWaterOptions" class="text-sm text-stone-500 hover:text-stone-700 flex items-center gap-1">
                 <span x-text="showWaterOptions ? 'Use recommended' : 'Choose different amount'"></span>
                 <svg class="w-4 h-4 transition-transform" :class="showWaterOptions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -1295,11 +1618,15 @@
               <div x-show="showWaterOptions" x-collapse class="mt-3">
                 <div class="flex items-center gap-2">
                   <div class="relative">
-                    <input type="number" x-model.number="waterMl" class="input-field w-20 rounded-lg px-3 py-2 font-mono text-center" min="0.1" step="0.1" placeholder="2">
+                    <input type="text" inputmode="decimal"
+                      :value="waterMl"
+                      @change="waterMl = parseFloat($event.target.value) || waterMl"
+                      @blur="waterMl = parseFloat($event.target.value) || waterMl"
+                      class="input-field w-20 rounded-lg px-3 py-2 font-mono text-center" placeholder="2">
                   </div>
                   <span class="text-stone-600 font-medium">mL</span>
                   <span class="text-stone-400">→</span>
-                  <span class="text-stone-600"><span class="font-mono" x-text="fmtConc(vialMg / waterMl)"></span> mg/mL</span>
+                  <span class="text-stone-600"><span class="font-mono" x-text="fmtConc((isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl)"></span> mg/mL</span>
                 </div>
               </div>
             </div>
@@ -1310,119 +1637,144 @@
           </div>
         </div>
 
+        
       </div>
 
       <!-- ==================== MAIN CALCULATOR CARD ==================== -->
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
         <div class="px-3 sm:px-4 py-2 bg-stone-50 border-b border-stone-100">
-          <!-- 2 rows on narrow, 1 row on wider screens -->
-          <div class="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 text-sm">
-            <!-- Row 1 on mobile: Peptide -->
-            <div class="flex items-center gap-1.5">
-              <span class="text-stone-500 text-xs sm:text-sm">Peptide</span>
-              <!-- Dropdown for preset peptides -->
-              <div x-show="peptideId !== 'other'" class="flex-1 md:flex-none">
-                <select
-                  x-model="peptideId"
-                  @change="if(peptideId !== 'other') selectPeptide(peptideId)"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full md:w-36"
-                >
+          <div class="flex flex-wrap items-center gap-3 text-sm">
+            <!-- Regular peptide: dropdown + mg -->
+            <template x-if="!isBlend">
+              <div class="flex items-center gap-3">
+                <!-- Peptide combobox -->
+                <div class="relative">
+                  <input type="text" list="peptide-list"
+                    :value="peptideId === 'other' ? customPeptideName : peptide.name"
+                    @input="handlePeptideInput($event.target.value)"
+                    @change="handlePeptideInput($event.target.value)"
+                    placeholder="Peptide"
+                    class="bg-white border border-stone-200 rounded pl-2 pr-6 py-1.5 text-stone-700 focus:outline-none focus:border-teal-400 w-32">
+                  <svg class="w-4 h-4 text-stone-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </div>
+                <datalist id="peptide-list">
                   <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
-                    <option :value="p" x-text="PEPTIDES[p].name"></option>
+                    <option :value="PEPTIDES[p].name"></option>
                   </template>
-                  <option value="other">Custom...</option>
-                </select>
+                </datalist>
+                <!-- Vial mg -->
+                <div class="flex items-center">
+                  <input type="text" inputmode="decimal"
+                    :value="vialMg"
+                    @change="vialMg = parseFloat($event.target.value) || vialMg; onVialChange();"
+                    @blur="vialMg = parseFloat($event.target.value) || vialMg; onVialChange();"
+                    class="bg-white border border-stone-200 rounded-l px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400">
+                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-2 py-1.5 text-stone-500 text-xs">mg</span>
+                </div>
               </div>
-              <!-- Text input for custom peptide name -->
-              <div x-show="peptideId === 'other'" class="flex items-center gap-1.5 flex-1 md:flex-none">
-                <input
-                  type="text"
-                  x-model="customPeptideName"
-                  placeholder="Peptide name"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 font-medium text-stone-700 focus:outline-none focus:border-teal-400 w-full md:w-28"
-                >
-                <button
-                  @click="peptideId = 'tirzepatide'; selectPeptide('tirzepatide')"
-                  class="text-stone-400 hover:text-stone-600 p-1"
-                  title="Back to presets"
-                >
+            </template>
+
+            <!-- Blend: editable components -->
+            <template x-if="isBlend">
+              <div class="flex items-center gap-3 flex-wrap">
+                <template x-for="(comp, idx) in blendComponents" :key="idx">
+                  <div class="flex items-center gap-3">
+                    <span x-show="idx > 0" class="text-stone-400">+</span>
+                    <input type="text"
+                      :value="comp.name"
+                      @change="updateBlendComponent(idx, 'name', $event.target.value)"
+                      @blur="updateBlendComponent(idx, 'name', $event.target.value)"
+                      placeholder="Peptide"
+                      class="bg-white border border-stone-200 rounded px-2 py-1.5 text-stone-700 focus:outline-none focus:border-teal-400 w-20">
+                    <div class="flex items-center">
+                      <input type="text" inputmode="decimal"
+                        :value="comp.mg"
+                        @change="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
+                        @blur="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
+                        placeholder="mg"
+                        class="bg-white border border-stone-200 rounded-l px-2 py-1.5 w-12 font-mono text-center focus:outline-none focus:border-teal-400">
+                      <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-2 py-1.5 text-stone-500 text-xs">mg</span>
+                    </div>
+                  </div>
+                </template>
+                <button @click="exitBlendMode()" class="text-stone-400 hover:text-stone-600 p-0.5" title="Exit blend mode">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
                 </button>
               </div>
-            </div>
-            <!-- Row 2 on narrow: Vial + BAC Water -->
-            <div class="flex items-center justify-between md:justify-start gap-4">
-              <div class="hidden md:block w-px h-6 bg-stone-200"></div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-stone-500 text-xs sm:text-sm">Vial</span>
-                <input type="number" x-model.number="vialMg" @input="onVialChange()"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400" min="1" step="1">
-                <span class="text-stone-500 text-xs sm:text-sm">mg</span>
+            </template>
+
+            <!-- + separator -->
+            <span class="text-stone-400">+</span>
+
+            <!-- BAC Water -->
+            <div class="flex items-center gap-3">
+              <div class="flex items-center">
+                <input type="text" inputmode="decimal"
+                  :value="waterMl"
+                  @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
+                  @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
+                  class="bg-white border border-stone-200 rounded-l px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400">
+                <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-2 py-1.5 text-stone-500 text-xs">mL</span>
               </div>
-              <div class="w-px h-5 bg-stone-200"></div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-stone-500 whitespace-nowrap text-xs sm:text-sm">BAC Water</span>
-                <input type="number" x-model.number="waterMl" @input="onWaterManualChange()"
-                  class="bg-white border border-stone-200 rounded px-2 py-1.5 w-14 font-mono text-center focus:outline-none focus:border-teal-400" min="0.1" step="0.1">
-                <span class="text-stone-500 text-xs sm:text-sm">mL</span>
-              </div>
+              <span class="text-stone-500 text-xs sm:text-sm">BAC Water</span>
             </div>
           </div>
         </div>
 
-        <!-- Main Calculator -->
-        <div class="px-3 sm:px-4 py-3 space-y-3">
-          <!-- Dose + Draw Row -->
-          <!-- Dose Input (compact ~1/3) -->
-          <div class="flex flex-col items-center gap-2">
-            <div class="flex flex-col items-center gap-1.5 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2.5 w-full">
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-stone-500 uppercase tracking-wide whitespace-nowrap">Dose</span>
-                <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                  class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">−</button>
-                <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1 px-2 w-24 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
-                  <input type="number" x-model.number="currentDose"
-                    class="w-14 text-left font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
-                    min="0.01" step="any" placeholder="2.5">
-                  <span class="text-xs text-stone-400">mg</span>
-                </div>
-                <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                  class="w-7 h-7 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors">+</button>
+        <!-- Main Calculator - Combined Card -->
+        <div class="px-3 sm:px-4 py-3">
+          <div class="bg-gradient-to-b from-stone-50 to-teal-50 border border-stone-200 rounded-xl overflow-hidden">
+            <!-- Dose Input Section -->
+            <div class="px-4 py-3 flex flex-wrap items-center justify-center gap-2">
+              <span class="text-sm text-stone-500 whitespace-nowrap">For a dose of</span>
+              <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
+                class="w-8 h-8 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
+              <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1.5 px-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+                <input type="text" inputmode="decimal"
+                  :value="currentDose"
+                  @change="currentDose = parseFloat($event.target.value) || currentDose"
+                  @blur="currentDose = parseFloat($event.target.value) || currentDose"
+                  class="w-14 text-center font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                  placeholder="2.5">
+                <span class="text-sm text-stone-400">mg</span>
               </div>
-              <!-- Quick Doses -->
-              <div x-show="peptide.quickDoses && peptide.quickDoses.length >= 3" class="flex justify-center gap-4">
-                <template x-for="d in peptide.quickDoses.slice(0, 3)" :key="d">
-                  <button @click="currentDose = d"
-                    :class="currentDose === d ? 'text-teal-600 font-medium' : 'text-stone-400 hover:text-teal-500'"
-                    class="text-xs font-mono transition-colors px-1"
-                    x-text="d + 'mg'"></button>
-                </template>
-              </div>
+              <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
+                class="w-8 h-8 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
+              <!-- Peptide name(s) -->
+              <span class="text-sm text-stone-500" x-show="!isBlend" x-text="peptideId === 'other' ? (customPeptideName || 'peptide') : peptide.name"></span>
+              <span class="text-sm text-stone-500" x-show="isBlend" x-text="'each of ' + blendComponents.map(c => c.name || '?').join(', ')"></span>
             </div>
 
-            <!-- Draw Result + Syringe (~2/3) -->
-            <div class="flex flex-col bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 w-full">
-              <div class="flex items-center justify-center gap-2 mb-2">
-                <span class="text-xs text-teal-600 uppercase tracking-wide">Draw</span>
-                <div class="flex flex-col items-center">
-                  <div class="flex items-baseline gap-1">
-                    <span class="font-mono font-bold text-2xl text-teal-600" x-text="fmt(units)"></span>
-                    <span class="text-sm font-medium text-teal-700">units</span>
-                  </div>
-                  <span class="text-teal-500 text-xs"><span class="font-mono" x-text="fmt(ml, 3)"></span> mL</span>
-                </div>
+            <!-- Flow Arrow -->
+            <div class="flex justify-center -my-1">
+              <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+              </svg>
+            </div>
+
+            <!-- Draw Result Section -->
+            <div class="px-4 pt-1 pb-2">
+              <!-- Contextual Guidance -->
+              <div class="text-center">
+                <span class="text-sm text-teal-700">Draw to the </span>
+                <span class="font-mono font-bold text-2xl text-teal-600" x-text="Math.round(units)"></span>
+                <span class="text-sm text-teal-700"> unit mark</span>
               </div>
+
               <!-- Warnings -->
-              <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-xs text-amber-800 text-center mb-2">
-                ⚠️ Exceeds syringe (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units)
+              <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-xs text-amber-800 text-center mt-1 mb-1">
+                Exceeds syringe capacity (<span x-text="syringeSize === '0.5' ? '50' : '100'"></span> units max)
               </div>
-              <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-1.5 text-xs text-blue-800 text-center mb-2">
-                ℹ️ Small volume – hard to measure
+              <div x-show="unitsTooSmall && !exceedsSyringe" class="bg-blue-50 border border-blue-200 rounded-lg p-1.5 text-xs text-blue-800 text-center mt-1 mb-1">
+                Small volume – may be hard to measure precisely
               </div>
-              <!-- Syringe inside Draw container -->
+
+              <!-- Syringe -->
               <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
             </div>
           </div>
@@ -1440,18 +1792,10 @@
                   class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
               </div>
             </div>
-            <div class="grid grid-cols-4 gap-3 sm:flex sm:items-start sm:gap-5">
+            <div class="flex items-start gap-5">
               <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
                 <span class="text-[10px] sm:text-xs text-stone-400">Concentration</span>
                 <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="fmtConc(concentration) + ' mg/mL'"></span>
-              </div>
-              <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
-                <span class="text-[10px] sm:text-xs text-stone-400">Units/mg</span>
-                <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="fmt(100 / concentration)"></span>
-              </div>
-              <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
-                <span class="text-[10px] sm:text-xs text-stone-400">Max Dose</span>
-                <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="fmt(parseFloat(syringeSize) * concentration) + ' mg'"></span>
               </div>
               <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
                 <span class="text-[10px] sm:text-xs text-stone-400">Doses/Vial</span>
