@@ -1581,14 +1581,33 @@
             <div x-show="wizardStep > 4" class="text-sm font-mono text-stone-600" x-text="waterMl + ' mL'"></div>
           </div>
           <div x-show="wizardStep === 4" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
+            <p class="text-sm text-stone-500">Reconstitute (dissolve) the lyophilized (freeze-dried) powder with BAC water. This amount keeps your doses easy to measure.</p>
             <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-medium text-teal-800 text-sm" x-text="waterManuallySet ? 'Current:' : 'Recommended:'"></span>
                 <span class="font-mono font-semibold text-teal-700" x-text="(waterManuallySet ? waterMl : recommendation.waterMl) + ' mL'"></span>
               </div>
-              <p class="text-xs text-teal-700">
-                Gives <span class="font-mono font-medium" x-text="fmtConc((waterManuallySet ? (isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl : recommendation.concentration))"></span> mg/mL.
-                Doses: <span class="font-mono" x-text="waterManuallySet ? Math.round((doseMin / ((isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl)) * 100) : recommendation.minUnits"></span>–<span class="font-mono" x-text="waterManuallySet ? Math.round((doseMax / ((isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl)) * 100) : recommendation.maxUnits"></span> units.
+              <!-- Blend: show each peptide's concentration -->
+              <div x-show="isBlend" class="text-xs text-teal-700 space-y-0.5">
+                <div>
+                  <span x-text="blendComponents[0]?.name"></span>: <span class="font-mono font-medium" x-text="fmtConc(blendComponents[0]?.mg / (waterManuallySet ? waterMl : recommendation.waterMl))"></span> mg/mL
+                </div>
+                <div>
+                  <span x-text="blendComponents[1]?.name"></span>: <span class="font-mono font-medium" x-text="fmtConc(blendComponents[1]?.mg / (waterManuallySet ? waterMl : recommendation.waterMl))"></span> mg/mL
+                </div>
+                <div>
+                  Your doses will draw <span class="font-mono" x-text="waterManuallySet ? Math.round((currentDose / (blendComponents[0]?.mg / waterMl)) * 100) : recommendation.minUnits"></span> units.
+                </div>
+              </div>
+              <!-- Regular peptide with dose range -->
+              <p x-show="!isBlend && doseMin !== doseMax" class="text-xs text-teal-700">
+                This creates a <span class="font-mono font-medium" x-text="fmtConc(waterManuallySet ? vialMg / waterMl : recommendation.concentration)"></span> mg/mL concentration.
+                Your doses will draw <span class="font-mono" x-text="waterManuallySet ? Math.round((doseMin / (vialMg / waterMl)) * 100) : recommendation.minUnits"></span>–<span class="font-mono" x-text="waterManuallySet ? Math.round((doseMax / (vialMg / waterMl)) * 100) : recommendation.maxUnits"></span> units.
+              </p>
+              <!-- Regular peptide with single dose -->
+              <p x-show="!isBlend && doseMin === doseMax" class="text-xs text-teal-700">
+                This creates a <span class="font-mono font-medium" x-text="fmtConc(waterManuallySet ? vialMg / waterMl : recommendation.concentration)"></span> mg/mL concentration.
+                Your doses will draw <span class="font-mono" x-text="waterManuallySet ? Math.round((doseMin / (vialMg / waterMl)) * 100) : recommendation.minUnits"></span> units.
               </p>
             </div>
             <div>
