@@ -813,7 +813,7 @@
           const primaryConc = this.blendConcentrations[0];
           const mlNeeded = this.currentDose / primaryConc;
           return this.blendComponents.map((c, i) => {
-            return Math.round(this.blendConcentrations[i] * mlNeeded * 1000) / 1000;
+            return Math.round(this.blendConcentrations[i] * mlNeeded * 100) / 100;
           });
         },
 
@@ -1728,10 +1728,11 @@
         <div class="px-3 sm:px-4 py-3">
           <div class="bg-gradient-to-b from-stone-50 to-teal-50 border border-stone-200 rounded-xl overflow-hidden">
             <!-- Dose Input Section -->
-            <div class="px-4 py-3 flex flex-wrap items-center justify-center gap-2">
+            <!-- Regular peptide dose input -->
+            <div x-show="!isBlend" class="px-4 py-3 flex flex-wrap items-center justify-center gap-2">
               <span class="text-sm text-stone-500 whitespace-nowrap">For a dose of</span>
               <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                class="w-8 h-8 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
+                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
               <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1.5 px-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
                 <input type="text" inputmode="decimal"
                   :value="currentDose"
@@ -1742,10 +1743,41 @@
                 <span class="text-sm text-stone-400">mg</span>
               </div>
               <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                class="w-8 h-8 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-lg font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
-              <!-- Peptide name (for blends, show primary since that's what we're dosing by) -->
-              <span class="text-sm text-stone-500" x-show="!isBlend" x-text="peptideId === 'other' ? (customPeptideName || 'peptide') : peptide.name"></span>
-              <span class="text-sm text-stone-500" x-show="isBlend" x-text="blendComponents[0]?.name || 'blend'"></span>
+                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
+              <span class="text-sm text-stone-500" x-text="peptideId === 'other' ? (customPeptideName || 'peptide') : peptide.name"></span>
+            </div>
+
+            <!-- Blend stacked dose input -->
+            <div x-show="isBlend" class="px-4 py-3 flex items-center justify-center gap-3">
+              <span class="text-sm text-stone-500 whitespace-nowrap">For a dose of</span>
+
+              <!-- Minus button (centered vertically) -->
+              <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
+                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
+
+              <!-- Stacked inputs -->
+              <div class="flex flex-col gap-1">
+                <!-- Primary peptide (editable) -->
+                <div class="bg-white border border-stone-200 rounded-lg px-2 py-1 flex items-center gap-1.5 min-w-[140px] shadow-sm focus-within:border-teal-400">
+                  <input type="text" inputmode="decimal"
+                    :value="currentDose"
+                    @change="currentDose = parseFloat($event.target.value) || currentDose"
+                    @blur="currentDose = parseFloat($event.target.value) || currentDose"
+                    class="w-10 font-mono font-semibold text-center text-stone-800 bg-transparent focus:outline-none">
+                  <span class="text-stone-400 text-xs">mg</span>
+                  <span class="text-stone-600 text-sm" x-text="blendComponents[0]?.name || ''"></span>
+                </div>
+                <!-- Secondary peptide (auto-calculated) -->
+                <div class="bg-stone-100 border border-stone-200 rounded-lg px-2 py-1 flex items-center gap-1.5 min-w-[140px]">
+                  <span class="w-10 font-mono font-semibold text-center text-stone-500" x-text="blendDoses && blendDoses[1] ? blendDoses[1] : '—'"></span>
+                  <span class="text-stone-400 text-xs">mg</span>
+                  <span class="text-stone-500 text-sm" x-text="blendComponents[1]?.name || ''"></span>
+                </div>
+              </div>
+
+              <!-- Plus button (centered vertically) -->
+              <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
+                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
             </div>
 
             <!-- Flow Arrow -->
@@ -1764,17 +1796,6 @@
                 <span class="text-sm text-teal-700"> unit mark</span>
               </div>
 
-              <!-- Blend dose breakdown -->
-              <div x-show="isBlend && blendDoses" class="text-center text-xs text-stone-500 mt-1">
-                <span>Delivers </span>
-                <template x-for="(dose, idx) in blendDoses" :key="idx">
-                  <span>
-                    <span x-show="idx > 0"> + </span>
-                    <span class="font-mono" x-text="dose + 'mg'"></span>
-                    <span x-text="blendComponents[idx]?.name || ''"></span>
-                  </span>
-                </template>
-              </div>
 
               <!-- Warnings -->
               <div x-show="exceedsSyringe" class="bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-xs text-amber-800 text-center mt-1 mb-1">
