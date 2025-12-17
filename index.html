@@ -1243,7 +1243,7 @@
               x-show="showSavedSetups"
               @click.away="showSavedSetups = false"
               x-transition
-              class="absolute left-0 sm:left-auto sm:right-0 mt-1 w-64 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
+              class="absolute right-0 mt-1 w-56 sm:w-64 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
             >
               <div class="px-3 py-1.5 text-xs text-stone-400 uppercase tracking-wide">Saved Setups</div>
               <template x-for="setup in savedSetups" :key="setup.id">
@@ -1252,10 +1252,10 @@
                   :class="activeSetupId === setup.id ? 'bg-teal-50' : ''"
                   @click="loadSetup(setup)"
                 >
-                  <span class="text-sm text-stone-700" x-text="setup.name"></span>
+                  <span class="text-sm text-stone-700 truncate mr-2" x-text="setup.name"></span>
                   <button
                     @click.stop="deleteSetup(setup.id)"
-                    class="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    class="text-stone-400 hover:text-red-500 flex-shrink-0 p-1 -mr-1"
                     title="Delete"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
