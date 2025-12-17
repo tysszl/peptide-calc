@@ -1602,50 +1602,68 @@
             <div x-show="wizardStep > 4" class="text-sm font-mono text-stone-600" x-text="waterMl + ' mL'"></div>
           </div>
           <div x-show="wizardStep === 4" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
-            <p class="text-sm text-stone-500">Use the recommended volume to keep your draws in a convenient range.</p>
-            <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-medium text-teal-800 text-sm" x-text="waterManuallySet ? 'Current:' : 'Recommended:'"></span>
-                <span class="font-mono font-semibold text-teal-700" x-text="(waterManuallySet ? waterMl : recommendation.waterMl) + ' mL'"></span>
+            <p class="text-sm text-stone-500">Set the BAC water volume for reconstitution.</p>
+
+            <!-- Current value row with editable input -->
+            <div class="flex items-center flex-wrap gap-2 text-sm">
+              <div class="flex items-center">
+                <input type="text" inputmode="decimal"
+                  :value="waterMl"
+                  @input="waterManuallySet = true"
+                  @change="waterMl = parseFloat($event.target.value) || waterMl; waterManuallySet = true"
+                  @blur="waterMl = parseFloat($event.target.value) || waterMl"
+                  class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
               </div>
-              <!-- Blend: show each peptide's concentration -->
-              <p x-show="isBlend" class="text-xs text-teal-700">
-                This creates <span class="font-mono font-medium" x-text="fmtConc(blendComponents[0]?.mg / (waterManuallySet ? waterMl : recommendation.waterMl))"></span> mg/mL <span x-text="blendComponents[0]?.name"></span> and <span class="font-mono font-medium" x-text="fmtConc(blendComponents[1]?.mg / (waterManuallySet ? waterMl : recommendation.waterMl))"></span> mg/mL <span x-text="blendComponents[1]?.name"></span>.
-                Your doses will draw <span class="font-mono" x-text="waterManuallySet ? Math.round((currentDose / (blendComponents[0]?.mg / waterMl)) * 100) : recommendation.minUnits"></span> units.
-              </p>
-              <!-- Regular peptide with dose range -->
-              <p x-show="!isBlend && doseMin !== doseMax" class="text-xs text-teal-700">
-                This creates a <span class="font-mono font-medium" x-text="fmtConc(waterManuallySet ? vialMg / waterMl : recommendation.concentration)"></span> mg/mL concentration.
-                Your doses will draw <span class="font-mono" x-text="waterManuallySet ? Math.round((doseMin / (vialMg / waterMl)) * 100) : recommendation.minUnits"></span>–<span class="font-mono" x-text="waterManuallySet ? Math.round((doseMax / (vialMg / waterMl)) * 100) : recommendation.maxUnits"></span> units.
-              </p>
-              <!-- Regular peptide with single dose -->
-              <p x-show="!isBlend && doseMin === doseMax" class="text-xs text-teal-700">
-                This creates a <span class="font-mono font-medium" x-text="fmtConc(waterManuallySet ? vialMg / waterMl : recommendation.concentration)"></span> mg/mL concentration.
-                Your doses will draw <span class="font-mono" x-text="waterManuallySet ? Math.round((doseMin / (vialMg / waterMl)) * 100) : recommendation.minUnits"></span> units.
-              </p>
+              <span class="text-stone-400">→</span>
+              <!-- Regular peptide concentration -->
+              <span x-show="!isBlend" class="text-stone-600">
+                <span class="font-mono" x-text="fmtConc(vialMg / waterMl)"></span> mg/mL
+              </span>
+              <!-- Blend concentrations -->
+              <span x-show="isBlend" class="text-stone-600">
+                <span class="font-mono" x-text="fmtConc(blendComponents[0]?.mg / waterMl)"></span> / <span class="font-mono" x-text="fmtConc(blendComponents[1]?.mg / waterMl)"></span> mg/mL
+              </span>
+              <span class="text-stone-400">→</span>
+              <!-- Units display -->
+              <span x-show="!isBlend && doseMin !== doseMax" class="text-stone-600">
+                draws <span class="font-mono" x-text="Math.round((doseMin / (vialMg / waterMl)) * 100)"></span>–<span class="font-mono" x-text="Math.round((doseMax / (vialMg / waterMl)) * 100)"></span> units
+              </span>
+              <span x-show="!isBlend && doseMin === doseMax" class="text-stone-600">
+                draws <span class="font-mono" x-text="Math.round((doseMin / (vialMg / waterMl)) * 100)"></span> units
+              </span>
+              <span x-show="isBlend" class="text-stone-600">
+                draws <span class="font-mono" x-text="Math.round((currentDose / (blendComponents[0]?.mg / waterMl)) * 100)"></span> units
+              </span>
             </div>
-            <div>
-              <button @click="if(showWaterOptions) { waterMl = recommendation.waterMl; waterManuallySet = false; } showWaterOptions = !showWaterOptions" class="text-sm text-stone-500 hover:text-stone-700 flex items-center gap-1">
-                <span x-text="showWaterOptions ? 'Use recommended' : 'Choose different amount'"></span>
-                <svg class="w-4 h-4 transition-transform" :class="showWaterOptions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <div x-show="showWaterOptions" x-collapse class="mt-3">
-                <div class="flex items-center gap-2">
-                  <div class="relative">
-                    <input type="text" inputmode="decimal"
-                      :value="waterMl"
-                      @change="waterMl = parseFloat($event.target.value) || waterMl"
-                      @blur="waterMl = parseFloat($event.target.value) || waterMl"
-                      class="input-field w-20 rounded-lg px-3 py-2 font-mono text-center" placeholder="2">
-                  </div>
-                  <span class="text-stone-600 font-medium">mL</span>
-                  <span class="text-stone-400">→</span>
-                  <span class="text-stone-600"><span class="font-mono" x-text="fmtConc((isBlend && blendComponents[0]?.mg ? blendComponents[0].mg : vialMg) / waterMl)"></span> mg/mL</span>
-                </div>
-              </div>
+
+            <!-- Recommended row (shown when different from current) -->
+            <div x-show="waterMl !== recommendation.waterMl" class="flex items-center flex-wrap gap-2 text-sm bg-teal-50 border border-teal-200 rounded-lg p-2">
+              <span class="text-teal-700">Recommended:</span>
+              <span class="font-mono text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
+              <span class="text-teal-400">→</span>
+              <span x-show="!isBlend" class="text-teal-600">
+                <span class="font-mono" x-text="fmtConc(recommendation.concentration)"></span> mg/mL
+              </span>
+              <span x-show="isBlend" class="text-teal-600">
+                <span class="font-mono" x-text="fmtConc(blendComponents[0]?.mg / recommendation.waterMl)"></span> / <span class="font-mono" x-text="fmtConc(blendComponents[1]?.mg / recommendation.waterMl)"></span> mg/mL
+              </span>
+              <span class="text-teal-400">→</span>
+              <span x-show="!isBlend && doseMin !== doseMax" class="text-teal-600">
+                draws <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> units
+              </span>
+              <span x-show="!isBlend && doseMin === doseMax" class="text-teal-600">
+                draws <span class="font-mono" x-text="recommendation.minUnits"></span> units
+              </span>
+              <span x-show="isBlend" class="text-teal-600">
+                draws <span class="font-mono" x-text="recommendation.minUnits"></span> units
+              </span>
+              <button
+                @click="waterMl = recommendation.waterMl; waterManuallySet = false"
+                class="text-xs text-teal-600 hover:text-teal-800 underline ml-auto"
+              >Use this</button>
             </div>
+
             <div class="flex gap-2">
               <button @click="wizardBack()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">Back</button>
               <button @click="completeWizard()" class="btn-primary flex-[2] py-2.5 rounded-lg font-medium">Done</button>
@@ -1661,7 +1679,7 @@
         <!-- Config Row -->
         <div class="px-3 sm:px-4 py-2 bg-stone-50 border-b border-stone-100">
           <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] text-stone-400">Vial setup</span>
+            <span class="text-xs text-stone-500 font-medium">Vial setup</span>
             <!-- Save indicator -->
             <button
               @click="saveSetup()"
@@ -1750,21 +1768,21 @@
 
         <!-- Main Calculator - Combined Card -->
         <div class="bg-gradient-to-b from-stone-50 to-teal-50 border-y border-stone-200">
-          <div class="text-[10px] text-stone-400 pt-2 px-3 sm:px-4">Dosing calculation</div>
+          <div class="text-xs text-stone-500 font-medium pt-2 px-3 sm:px-4">Dosing calculation</div>
             <!-- Dose Input Section -->
             <!-- Regular peptide dose input -->
             <div x-show="!isBlend" class="px-4 py-3 flex flex-wrap items-center justify-center gap-1.5">
               <span class="text-sm text-stone-500">For</span>
               <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
                 class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
-              <div class="flex items-baseline justify-center gap-0.5 bg-white border border-stone-200 rounded-lg py-1 px-2 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+              <div class="flex items-center">
                 <input type="text" inputmode="decimal"
                   :value="currentDose"
                   @change="currentDose = parseFloat($event.target.value) || currentDose"
                   @blur="currentDose = parseFloat($event.target.value) || currentDose"
-                  class="w-12 text-center font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                  class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-lg font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400"
                   placeholder="2.5">
-                <span class="text-sm text-stone-400">mg</span>
+                <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
               </div>
               <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
                 class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
@@ -1782,18 +1800,20 @@
               <!-- Stacked dose boxes -->
               <div class="flex flex-col gap-1">
                 <!-- Primary peptide dose (editable) -->
-                <div class="flex items-center gap-0.5 bg-white border border-stone-200 rounded-lg py-1 px-2 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+                <div class="flex items-center">
                   <input type="text" inputmode="decimal"
                     :value="currentDose"
                     @change="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
                     @blur="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
-                    class="w-12 text-center font-mono text-lg font-semibold text-stone-800 bg-transparent focus:outline-none">
-                  <span class="text-sm text-stone-400">mg</span>
+                    class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400">
+                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
                 </div>
                 <!-- Secondary peptide dose (calculated) -->
-                <div class="flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded-lg py-1 px-2 shadow-sm">
-                  <span class="w-12 text-center font-mono text-lg text-stone-500 leading-7" x-text="blendDoses && blendDoses[1] ? blendDoses[1] : '—'"></span>
-                  <span class="text-sm text-stone-400">mg</span>
+                <div class="flex items-center">
+                  <div class="bg-stone-100 border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base text-center text-stone-500">
+                    <span x-text="blendDoses && blendDoses[1] ? blendDoses[1] : '—'"></span>
+                  </div>
+                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
                 </div>
               </div>
 
