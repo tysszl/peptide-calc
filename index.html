@@ -1230,20 +1230,20 @@
           <div x-show="savedSetups.length > 0" class="relative">
             <button
               @click="showSavedSetups = !showSavedSetups"
-              class="p-2 rounded-lg hover:bg-stone-100 text-stone-500 hover:text-stone-700 transition-colors"
+              class="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-stone-100 text-stone-600 hover:text-stone-700 transition-colors flex items-center gap-1.5"
               :class="showSavedSetups ? 'bg-stone-100 text-stone-700' : ''"
-              title="Saved setups"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
               </svg>
+              Saved
             </button>
             <!-- Dropdown panel -->
             <div
               x-show="showSavedSetups"
               @click.away="showSavedSetups = false"
               x-transition
-              class="absolute right-0 mt-1 w-64 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
+              class="absolute left-0 sm:left-auto sm:right-0 mt-1 w-64 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
             >
               <div class="px-3 py-1.5 text-xs text-stone-400 uppercase tracking-wide">Saved Setups</div>
               <template x-for="setup in savedSetups" :key="setup.id">
@@ -1659,9 +1659,29 @@
       <!-- ==================== MAIN CALCULATOR CARD ==================== -->
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
-        <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-b border-stone-100">
+        <div class="px-3 sm:px-4 py-2 bg-stone-50 border-b border-stone-100">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] text-stone-400">Vial setup</span>
+            <!-- Save indicator -->
+            <button
+              @click="saveSetup()"
+              x-show="!isCurrentSetupSaved()"
+              class="text-[10px] text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+              </svg>
+              Save setup
+            </button>
+            <div x-show="isCurrentSetupSaved()" class="text-[10px] text-teal-600 flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Saved
+            </div>
+          </div>
           <!-- Regular peptide: sentence format -->
-          <div x-show="!isBlend" class="flex items-center flex-wrap gap-1.5 text-sm text-stone-600">
+          <div x-show="!isBlend" class="flex items-center justify-center flex-wrap gap-1.5 text-sm text-stone-600">
             <div class="flex items-center">
               <input type="text" inputmode="decimal"
                 :value="vialMg"
@@ -1695,7 +1715,7 @@
           </div>
 
           <!-- Blend: sentence format -->
-          <div x-show="isBlend" class="flex items-center flex-wrap gap-1.5 text-sm text-stone-600">
+          <div x-show="isBlend" class="flex items-center justify-center flex-wrap gap-1.5 text-sm text-stone-600">
             <template x-for="(comp, idx) in blendComponents" :key="idx">
               <div class="flex items-center gap-1.5">
                 <span x-show="idx > 0" class="text-stone-400">+</span>
@@ -1729,20 +1749,20 @@
         </div>
 
         <!-- Main Calculator - Combined Card -->
-        <div class="px-3 sm:px-4 py-3">
-          <div class="bg-gradient-to-b from-stone-50 to-teal-50 border border-stone-200 rounded-xl overflow-hidden">
+        <div class="bg-gradient-to-b from-stone-50 to-teal-50 border-y border-stone-200">
+          <div class="text-[10px] text-stone-400 pt-2 px-3 sm:px-4">Dosing calculation</div>
             <!-- Dose Input Section -->
             <!-- Regular peptide dose input -->
-            <div x-show="!isBlend" class="px-4 py-3 flex flex-wrap items-center justify-center gap-2">
-              <span class="text-sm text-stone-500 whitespace-nowrap">For a dose of</span>
+            <div x-show="!isBlend" class="px-4 py-3 flex flex-wrap items-center justify-center gap-1.5">
+              <span class="text-sm text-stone-500">For</span>
               <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
                 class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
-              <div class="flex items-baseline justify-center gap-1 bg-white border border-stone-200 rounded-lg py-1.5 px-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+              <div class="flex items-baseline justify-center gap-0.5 bg-white border border-stone-200 rounded-lg py-1 px-2 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
                 <input type="text" inputmode="decimal"
                   :value="currentDose"
                   @change="currentDose = parseFloat($event.target.value) || currentDose"
                   @blur="currentDose = parseFloat($event.target.value) || currentDose"
-                  class="w-14 text-center font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
+                  class="w-12 text-center font-mono text-xl font-semibold text-stone-800 bg-transparent focus:outline-none"
                   placeholder="2.5">
                 <span class="text-sm text-stone-400">mg</span>
               </div>
@@ -1752,8 +1772,8 @@
             </div>
 
             <!-- Blend stacked dose input -->
-            <div x-show="isBlend" class="px-4 py-3 flex items-center justify-center gap-2">
-              <span class="text-sm text-stone-500 whitespace-nowrap">For a dose of</span>
+            <div x-show="isBlend" class="px-4 py-3 flex items-center justify-center gap-1.5">
+              <span class="text-sm text-stone-500">For</span>
 
               <!-- Minus button -->
               <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4); doseMin = currentDose; doseMax = currentDose"
@@ -1762,7 +1782,7 @@
               <!-- Stacked dose boxes -->
               <div class="flex flex-col gap-1">
                 <!-- Primary peptide dose (editable) -->
-                <div class="flex items-center gap-1 bg-white border border-stone-200 rounded-lg py-1.5 px-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+                <div class="flex items-center gap-0.5 bg-white border border-stone-200 rounded-lg py-1 px-2 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
                   <input type="text" inputmode="decimal"
                     :value="currentDose"
                     @change="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
@@ -1771,7 +1791,7 @@
                   <span class="text-sm text-stone-400">mg</span>
                 </div>
                 <!-- Secondary peptide dose (calculated) -->
-                <div class="flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg py-1.5 px-3 shadow-sm">
+                <div class="flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded-lg py-1 px-2 shadow-sm">
                   <span class="w-12 text-center font-mono text-lg text-stone-500 leading-7" x-text="blendDoses && blendDoses[1] ? blendDoses[1] : '—'"></span>
                   <span class="text-sm text-stone-400">mg</span>
                 </div>
@@ -1783,8 +1803,8 @@
 
               <!-- Stacked peptide names -->
               <div class="flex flex-col gap-1">
-                <span class="text-sm text-stone-600 py-1.5" x-text="blendComponents[0]?.name || ''"></span>
-                <span class="text-sm text-stone-500 py-1.5" x-text="blendComponents[1]?.name || ''"></span>
+                <span class="text-sm text-stone-600 py-1" x-text="blendComponents[0]?.name || ''"></span>
+                <span class="text-sm text-stone-500 py-1" x-text="blendComponents[1]?.name || ''"></span>
               </div>
             </div>
 
@@ -1816,12 +1836,11 @@
               <!-- Syringe -->
               <div class="-mx-2 flex justify-center" x-html="syringeSvg"></div>
             </div>
-          </div>
         </div>
 
         <!-- Footer -->
-        <div class="px-3 sm:px-4 py-2.5 bg-stone-50 border-t border-stone-100">
-          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
+        <div class="px-3 sm:px-4 py-2.5 bg-stone-50">
+          <div class="flex flex-wrap items-start justify-between gap-y-3">
             <div class="flex flex-col gap-1">
               <span class="text-xs text-stone-400">Syringe</span>
               <div class="flex">
@@ -1831,7 +1850,7 @@
                   class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
               </div>
             </div>
-            <div class="flex items-start gap-5">
+            <div class="flex items-start gap-3 sm:gap-5">
               <div class="flex flex-col gap-0.5 sm:gap-1 text-center">
                 <span class="text-[10px] sm:text-xs text-stone-400">Concentration</span>
                 <!-- Single peptide -->
@@ -1844,26 +1863,6 @@
                 <span class="font-mono font-medium text-stone-700 text-sm sm:text-base" x-text="dosesPerVial || '—'"></span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Save Button -->
-        <div class="px-4 py-2.5 border-t border-stone-100">
-          <button
-            @click="saveSetup()"
-            x-show="!isCurrentSetupSaved()"
-            class="w-full py-2 rounded-lg text-sm font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center gap-2 transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-            </svg>
-            Save this setup
-          </button>
-          <div x-show="isCurrentSetupSaved()" class="text-center text-sm text-teal-600 py-1">
-            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            Setup saved
           </div>
         </div>
       </div>
