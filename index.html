@@ -1044,19 +1044,46 @@
           );
         },
 
+        // Check if dose has changed from the loaded saved setup
+        hasUnsavedDoseChange() {
+          if (!this.activeSetupId) return false;
+          const setup = this.savedSetups.find(s => s.id === this.activeSetupId);
+          if (!setup) return false;
+          return setup.currentDose !== this.currentDose;
+        },
+
+        // Get short name for a peptide
+        getShortPeptideName(peptideId, customName) {
+          const shortNames = {
+            tirzepatide: 'Tirz',
+            retatrutide: 'Reta'
+          };
+          if (peptideId === 'other') return customName || 'Custom';
+          return shortNames[peptideId] || PEPTIDES[peptideId]?.name || peptideId;
+        },
+
+        // Generate setup name in format: "Tirz 18mg/1.8mL 12/18/25"
+        generateSetupName() {
+          const now = new Date();
+          const dateStr = `${now.getMonth() + 1}/${now.getDate()}/${String(now.getFullYear()).slice(-2)}`;
+
+          if (this.isBlend) {
+            // "Tirz+Reta 10+12mg/2mL 12/18/25"
+            const names = this.blendComponents.map(c => this.getShortPeptideName(c.peptideId, c.name)).join('+');
+            const mgs = this.blendComponents.map(c => c.mg).join('+');
+            return `${names} ${mgs}mg/${this.waterMl}mL ${dateStr}`;
+          } else {
+            // "Tirz 18mg/1.8mL 12/18/25"
+            const shortName = this.getShortPeptideName(this.peptideId, this.customPeptideName);
+            return `${shortName} ${this.vialMg}mg/${this.waterMl}mL ${dateStr}`;
+          }
+        },
+
         // Save current setup
         saveSetup() {
           if (this.isCurrentSetupSaved()) return;
 
-          // Format date as M/D/YY (US format)
-          const now = new Date();
-          const dateStr = `${now.getMonth() + 1}/${now.getDate()}/${String(now.getFullYear()).slice(-2)}`;
-
-          // Generate name based on blend or peptide
-          const peptideName = this.peptideId === 'other' ? (this.customPeptideName || 'Custom') : this.peptide.name;
-          const setupName = this.isBlend
-            ? `${this.blendComponents.map(c => c.name + ' ' + c.mg + 'mg').join(' + ')} – ${dateStr}`
-            : `${peptideName} ${this.vialMg}mg – ${dateStr}`;
+          const setupName = this.generateSetupName();
 
           const setup = {
             id: Date.now().toString(36),
@@ -1081,6 +1108,20 @@
           this.storage.hasCompletedSetup = true;
           Storage.save(this.storage);
           this.activeSetupId = setup.id;
+        },
+
+        // Update dose in an existing saved setup
+        updateSetup() {
+          const idx = this.savedSetups.findIndex(s => s.id === this.activeSetupId);
+          if (idx === -1) return;
+
+          this.savedSetups[idx].name = this.generateSetupName();
+          this.savedSetups[idx].currentDose = this.currentDose;
+          this.savedSetups[idx].doseMin = this.doseMin;
+          this.savedSetups[idx].doseMax = this.doseMax;
+
+          this.storage.setups = this.savedSetups;
+          Storage.save(this.storage);
         },
 
         // Load a saved setup
@@ -1238,12 +1279,12 @@
               </svg>
               Saved
             </button>
-            <!-- Dropdown panel -->
+            <!-- Dropdown panel - centered on screen, auto-width -->
             <div
               x-show="showSavedSetups"
               @click.away="showSavedSetups = false"
-              x-transition
-              class="absolute right-0 mt-1 w-56 sm:w-64 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
+              x-transition.opacity.duration.150ms
+              class="fixed inset-x-0 mx-auto top-16 w-fit min-w-48 max-w-80 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-50"
             >
               <div class="px-3 py-1.5 text-xs text-stone-400 uppercase tracking-wide">Saved Setups</div>
               <template x-for="setup in savedSetups" :key="setup.id">
@@ -1637,6 +1678,14 @@
               </span>
             </div>
 
+            <!-- Warning for volume exceeding vial capacity -->
+            <div x-show="waterMl > 3.5" class="flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-lg p-2">
+              <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <span class="text-amber-700">Standard 3mL vials hold a maximum of 3.5mL. Ensure your vial can accommodate this volume.</span>
+            </div>
+
             <!-- Recommended row (shown when different from current) -->
             <div x-show="waterMl !== recommendation.waterMl" class="flex items-center flex-wrap gap-2 text-sm bg-teal-50 border border-teal-200 rounded-lg p-2">
               <span class="text-teal-700">Recommended:</span>
@@ -1678,9 +1727,10 @@
       <div class="card rounded-xl overflow-hidden" :class="showWizard && wizardStep < 4 ? 'opacity-40 pointer-events-none' : ''">
         <!-- Config Row -->
         <div class="px-3 sm:px-4 py-2 bg-stone-50 border-b border-stone-100">
-          <div class="flex items-center justify-between mb-1">
+          <!-- Label row (hidden for blends - they have integrated layout) -->
+          <div x-show="!isBlend" class="flex items-center justify-between mb-1">
             <span class="text-xs text-stone-500 font-medium">Vial setup</span>
-            <!-- Save indicator -->
+            <!-- Save/Update indicator -->
             <button
               @click="saveSetup()"
               x-show="!isCurrentSetupSaved()"
@@ -1689,9 +1739,19 @@
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
               </svg>
-              Save setup
+              Save as new
             </button>
-            <div x-show="isCurrentSetupSaved()" class="text-[10px] text-teal-600 flex items-center gap-1">
+            <button
+              @click="updateSetup()"
+              x-show="isCurrentSetupSaved() && hasUnsavedDoseChange()"
+              class="text-[10px] text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Save changes
+            </button>
+            <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-[10px] text-teal-600 flex items-center gap-1">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
@@ -1732,99 +1792,190 @@
             </div>
           </div>
 
-          <!-- Blend: sentence format -->
-          <div x-show="isBlend" class="flex items-center justify-center flex-wrap gap-1.5 text-sm text-stone-600">
-            <template x-for="(comp, idx) in blendComponents" :key="idx">
+          <!-- Blend: integrated layout with label and save inline on wide, stacked on narrow -->
+          <div x-show="isBlend" class="flex flex-col min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between gap-1 min-[400px]:gap-2 text-sm text-stone-600">
+            <!-- Label row (own row on narrow, inline on wide) -->
+            <div class="flex items-center justify-between min-[400px]:hidden mb-1">
+              <span class="text-xs text-stone-500 font-medium">Vial setup</span>
+              <!-- Save indicator for narrow -->
+              <button
+                @click="saveSetup()"
+                x-show="!isCurrentSetupSaved()"
+                class="text-[10px] text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                </svg>
+                Save as new
+              </button>
+              <button
+                @click="updateSetup()"
+                x-show="isCurrentSetupSaved() && hasUnsavedDoseChange()"
+                class="text-[10px] text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Save changes
+              </button>
+              <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-[10px] text-teal-600 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Saved
+              </div>
+            </div>
+
+            <!-- Left: Label (hidden on narrow, shown on wide) -->
+            <span class="hidden min-[400px]:block text-xs text-stone-500 font-medium self-start pt-1">Vial setup</span>
+
+            <!-- Center: Stacked peptides + water -->
+            <div class="flex items-center justify-center min-[400px]:justify-start gap-3">
+              <!-- Stacked peptide rows -->
+              <div class="flex flex-col gap-1">
+                <template x-for="(comp, idx) in blendComponents" :key="idx">
+                  <div class="flex items-center gap-1.5">
+                    <div class="flex items-center">
+                      <input type="text" inputmode="decimal"
+                        :value="comp.mg"
+                        @change="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
+                        @blur="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
+                        placeholder="mg"
+                        class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                      <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mg</span>
+                    </div>
+                    <input type="text"
+                      :value="comp.name"
+                      @change="updateBlendComponent(idx, 'name', $event.target.value)"
+                      @blur="updateBlendComponent(idx, 'name', $event.target.value)"
+                      placeholder="Peptide"
+                      class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-teal-400 w-20">
+                  </div>
+                </template>
+              </div>
+              <!-- Water volume -->
               <div class="flex items-center gap-1.5">
-                <span x-show="idx > 0" class="text-stone-400">+</span>
+                <span class="text-stone-400">in</span>
                 <div class="flex items-center">
                   <input type="text" inputmode="decimal"
-                    :value="comp.mg"
-                    @change="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
-                    @blur="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
-                    placeholder="mg"
-                    class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
-                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mg</span>
+                    :value="waterMl"
+                    @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
+                    @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
+                    class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
                 </div>
-                <input type="text"
-                  :value="comp.name"
-                  @change="updateBlendComponent(idx, 'name', $event.target.value)"
-                  @blur="updateBlendComponent(idx, 'name', $event.target.value)"
-                  placeholder="Peptide"
-                  class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-teal-400 w-20">
               </div>
-            </template>
-            <span class="text-stone-400">in</span>
-            <div class="flex items-center">
-              <input type="text" inputmode="decimal"
-                :value="waterMl"
-                @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
-                @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
-                class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
-              <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
             </div>
+
+            <!-- Right: Save/Update indicator (hidden on narrow, shown on wide) -->
+            <div class="hidden min-[400px]:block self-start pt-1">
+              <button
+                @click="saveSetup()"
+                x-show="!isCurrentSetupSaved()"
+                class="text-[10px] text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                </svg>
+                Save as new
+              </button>
+              <button
+                @click="updateSetup()"
+                x-show="isCurrentSetupSaved() && hasUnsavedDoseChange()"
+                class="text-[10px] text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Save changes
+              </button>
+              <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-[10px] text-teal-600 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Saved
+              </div>
+            </div>
+          </div>
+          <!-- Warning for volume exceeding vial capacity -->
+          <div x-show="waterMl > 3.5" class="flex items-center justify-center gap-2 text-xs text-amber-600 mt-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span>Exceeds standard 3mL vial capacity (max 3.5mL)</span>
           </div>
         </div>
 
         <!-- Main Calculator - Combined Card -->
         <div class="bg-gradient-to-b from-stone-50 to-teal-50 border-y border-stone-200">
-          <div class="text-xs text-stone-500 font-medium pt-2 px-3 sm:px-4">Dosing calculation</div>
             <!-- Dose Input Section -->
             <!-- Regular peptide dose input -->
-            <div x-show="!isBlend" class="px-4 py-3 flex flex-wrap items-center justify-center gap-1.5">
-              <span class="text-sm text-stone-500">For</span>
-              <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
-              <div class="flex items-center">
-                <input type="text" inputmode="decimal"
-                  :value="currentDose"
-                  @change="currentDose = parseFloat($event.target.value) || currentDose"
-                  @blur="currentDose = parseFloat($event.target.value) || currentDose"
-                  class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-lg font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400"
-                  placeholder="2.5">
-                <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
+            <div x-show="!isBlend" class="px-3 sm:px-4 py-3 flex flex-col min-[400px]:flex-row min-[400px]:items-start gap-2">
+              <!-- Label (own row on narrow, top-aligned on wide) -->
+              <div class="text-xs text-stone-500 font-medium min-[400px]:pt-2">Dosing calculation</div>
+              <!-- Dose selector -->
+              <div class="flex flex-wrap items-center justify-center gap-2">
+                <span class="text-sm text-stone-500">For</span>
+                <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
+                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
+                <div class="flex items-center gap-1.5">
+                  <div class="flex items-center">
+                    <input type="text" inputmode="decimal"
+                      :value="currentDose"
+                      @change="currentDose = parseFloat($event.target.value) || currentDose"
+                      @blur="currentDose = parseFloat($event.target.value) || currentDose"
+                      class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-lg font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400"
+                      placeholder="2.5">
+                    <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
+                  </div>
+                  <span class="text-sm text-stone-600" x-text="peptideId === 'other' ? (customPeptideName || 'peptide') : peptide.name"></span>
+                </div>
+                <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
+                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
               </div>
-              <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
-              <span class="text-sm text-stone-500" x-text="peptideId === 'other' ? (customPeptideName || 'peptide') : peptide.name"></span>
             </div>
 
             <!-- Blend stacked dose input -->
-            <div x-show="isBlend" class="px-4 py-3 flex items-center justify-center gap-1.5">
-              <span class="text-sm text-stone-500">For</span>
+            <div x-show="isBlend" class="px-3 sm:px-4 py-3 flex flex-col min-[400px]:flex-row min-[400px]:items-start gap-2">
+              <!-- Label (own row on narrow, top-aligned on wide) -->
+              <div class="text-xs text-stone-500 font-medium min-[400px]:pt-1">Dosing calculation</div>
+              <!-- Dose selector -->
+              <div class="flex flex-wrap items-center justify-center gap-2">
+                <span class="text-sm text-stone-500">For</span>
 
-              <!-- Minus button -->
-              <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4); doseMin = currentDose; doseMax = currentDose"
-                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm self-center">−</button>
+                <!-- Minus button -->
+                <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4); doseMin = currentDose; doseMax = currentDose"
+                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
 
-              <!-- Stacked dose boxes -->
-              <div class="flex flex-col gap-1">
-                <!-- Primary peptide dose (editable) -->
-                <div class="flex items-center">
-                  <input type="text" inputmode="decimal"
-                    :value="currentDose"
-                    @change="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
-                    @blur="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
-                    class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400">
-                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
-                </div>
-                <!-- Secondary peptide dose (calculated) -->
-                <div class="flex items-center">
-                  <div class="bg-stone-100 border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base text-center text-stone-500">
-                    <span x-text="blendDoses && blendDoses[1] ? blendDoses[1] : '—'"></span>
+                <!-- Stacked dose rows with names -->
+                <div class="flex flex-col gap-1">
+                  <!-- Primary peptide: dose + name -->
+                  <div class="flex items-center gap-1.5">
+                    <div class="flex items-center">
+                      <input type="text" inputmode="decimal"
+                        :value="currentDose"
+                        @change="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
+                        @blur="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
+                        class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400">
+                      <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
+                    </div>
+                    <span class="text-sm text-stone-600" x-text="blendComponents[0]?.name || ''"></span>
                   </div>
-                  <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
+                  <!-- Secondary peptide: dose + name -->
+                  <div class="flex items-center gap-1.5">
+                    <div class="flex items-center">
+                      <div class="bg-stone-100 border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base text-center text-stone-500">
+                      <span x-text="blendDoses && blendDoses[1] ? blendDoses[1] : '—'"></span>
+                    </div>
+                    <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-[5px] text-stone-500 text-xs">mg</span>
+                  </div>
+                  <span class="text-sm text-stone-500" x-text="blendComponents[1]?.name || ''"></span>
                 </div>
               </div>
 
               <!-- Plus button -->
               <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4; doseMin = currentDose; doseMax = currentDose"
-                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm self-center">+</button>
-
-              <!-- Stacked peptide names -->
-              <div class="flex flex-col gap-1">
-                <span class="text-sm text-stone-600 py-1" x-text="blendComponents[0]?.name || ''"></span>
-                <span class="text-sm text-stone-500 py-1" x-text="blendComponents[1]?.name || ''"></span>
+                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
               </div>
             </div>
 
