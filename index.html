@@ -1910,9 +1910,9 @@
         <div class="bg-gradient-to-b from-stone-50 to-teal-50 border-y border-stone-200">
             <!-- Dose Input Section -->
             <!-- Regular peptide dose input -->
-            <div x-show="!isBlend" class="px-3 sm:px-4 py-3 flex flex-col min-[400px]:flex-row min-[400px]:items-start gap-2">
-              <!-- Label (own row on narrow, top-aligned on wide) -->
-              <div class="text-xs text-stone-500 font-medium min-[400px]:pt-2">Dosing calculation</div>
+            <div x-show="!isBlend" class="px-3 sm:px-4 pt-2 pb-3 flex flex-col gap-1">
+              <!-- Label always on own row -->
+              <div class="text-xs text-stone-500 font-medium">Dosing calculation</div>
               <!-- Dose selector -->
               <div class="flex flex-wrap items-center justify-center gap-2">
                 <span class="text-sm text-stone-500">For</span>
@@ -1936,9 +1936,9 @@
             </div>
 
             <!-- Blend stacked dose input -->
-            <div x-show="isBlend" class="px-3 sm:px-4 py-3 flex flex-col min-[400px]:flex-row min-[400px]:items-start gap-2">
-              <!-- Label (own row on narrow, top-aligned on wide) -->
-              <div class="text-xs text-stone-500 font-medium min-[400px]:pt-1">Dosing calculation</div>
+            <div x-show="isBlend" class="px-3 sm:px-4 pt-2 pb-3 flex flex-col gap-1">
+              <!-- Label always on own row -->
+              <div class="text-xs text-stone-500 font-medium">Dosing calculation</div>
               <!-- Dose selector -->
               <div class="flex flex-wrap items-center justify-center gap-2">
                 <span class="text-sm text-stone-500">For</span>
