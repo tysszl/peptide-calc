@@ -1767,27 +1767,24 @@
                 class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
               <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mg</span>
             </div>
-            <div class="relative">
-              <input type="text" list="peptide-list"
+            <div class="relative flex-1 min-w-24 max-w-32">
+              <input type="text"
                 :value="peptideId === 'other' ? customPeptideName : peptide.name"
                 @input="handlePeptideInput($event.target.value)"
                 @change="handlePeptideInput($event.target.value)"
                 placeholder="Peptide"
-                class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-teal-400 w-28">
+                class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-teal-400 w-full">
             </div>
-            <datalist id="peptide-list">
-              <template x-for="p in Object.keys(PEPTIDES).filter(k => k !== 'other')" :key="p">
-                <option :value="PEPTIDES[p].name"></option>
-              </template>
-            </datalist>
-            <span class="text-stone-400">in</span>
-            <div class="flex items-center">
-              <input type="text" inputmode="decimal"
-                :value="waterMl"
-                @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
-                @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
-                class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
-              <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-stone-400">in</span>
+              <div class="flex items-center">
+                <input type="text" inputmode="decimal"
+                  :value="waterMl"
+                  @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
+                  @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
+                  class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
+              </div>
             </div>
           </div>
 
