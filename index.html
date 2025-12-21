@@ -367,7 +367,7 @@
         aliases: ['Mounjaro', 'Zepbound'],
         category: 'GLP-1/GIP',
         description: 'Dual GLP-1/GIP agonist for weight management',
-        commonVials: [12, 18, 24, 34],
+        commonVials: [12, 18, 24, 34, 60],
         doseRanges: {
           micro: { min: 1, max: 2.5, label: 'Micro' },
           small: { min: 2.5, max: 5, label: 'Small' },
@@ -1642,7 +1642,7 @@
             <div x-show="wizardStep > 4" class="text-sm font-mono text-stone-600" x-text="waterMl + ' mL'"></div>
           </div>
           <div x-show="wizardStep === 4" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
-            <p class="text-sm text-stone-500">Set the BAC water volume for reconstitution.</p>
+            <p class="text-sm text-stone-500">Add this amount of BAC (bacteriostatic) water to your peptide vial to dissolve the powder. More water means a lower concentration and larger, easier-to-measure draws.</p>
 
             <!-- Current value row with editable input -->
             <div class="flex items-center flex-wrap gap-2 text-sm">
@@ -1686,8 +1686,10 @@
             </div>
 
             <!-- Recommended row (shown when different from current) -->
-            <div x-show="waterMl !== recommendation.waterMl" class="flex items-center flex-wrap gap-2 text-sm bg-teal-50 border border-teal-200 rounded-lg p-2">
-              <span class="text-teal-700">Recommended:</span>
+            <div x-show="waterMl !== recommendation.waterMl" class="bg-teal-50 border border-teal-200 rounded-lg p-2 space-y-1">
+              <div class="text-xs text-teal-600">We recommend this amount for easy-to-read syringe draws in your dose range:</div>
+              <div class="flex items-center flex-wrap gap-2 text-sm">
+              <span class="text-teal-700 font-medium">Recommended:</span>
               <span class="font-mono text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
               <span class="text-teal-400">→</span>
               <span x-show="!isBlend" class="text-teal-600">
@@ -1710,6 +1712,7 @@
                 @click="waterMl = recommendation.waterMl; waterManuallySet = false"
                 class="text-xs text-teal-600 hover:text-teal-800 underline ml-auto"
               >Use this</button>
+              </div>
             </div>
 
             <div class="flex gap-2">
