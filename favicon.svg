@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Vial body -->
+  <rect x="10" y="8" width="12" height="20" rx="2" fill="#0D9488"/>
+  <!-- Vial neck -->
+  <rect x="12" y="4" width="8" height="5" rx="1" fill="#0D9488"/>
+  <!-- Vial cap -->
+  <rect x="11" y="2" width="10" height="3" rx="1.5" fill="#0F766E"/>
+  <!-- Liquid inside (lighter teal) -->
+  <rect x="11" y="14" width="10" height="13" rx="1.5" fill="#14B8A6"/>
+  <!-- Shine highlight -->
+  <rect x="12" y="9" width="2" height="8" rx="1" fill="#5EEAD4" opacity="0.5"/>
+</svg>
