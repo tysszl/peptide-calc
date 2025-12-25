@@ -354,6 +354,23 @@
       opacity: 1;
       visibility: visible;
     }
+
+    /* Learn more expandable sections */
+    .learn-more {
+      color: #78716C;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.15s ease;
+    }
+    .learn-more:hover {
+      color: #0D9488;
+    }
+    .learn-more svg {
+      transition: transform 0.2s ease;
+    }
   </style>
 
   <script>
@@ -760,6 +777,7 @@
         // Wizard state
         showWizard: false,
         wizardStep: 1,
+        learnMore: { 1: false, 2: false, 3: false, 4: false },
 
         // Form data
         peptideId: 'tirzepatide',
@@ -1356,6 +1374,20 @@
             <template x-if="!isBlend">
               <div class="space-y-3">
                 <p class="text-sm text-stone-500">Select the peptide you're using</p>
+                <!-- Learn more -->
+                <div>
+                  <button class="learn-more" @click="learnMore[1] = !learnMore[1]">
+                    <span x-text="learnMore[1] ? 'Hide details' : 'Learn more'"></span>
+                    <svg class="w-3.5 h-3.5" :class="learnMore[1] && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  <div x-show="learnMore[1]" x-collapse class="mt-2 text-sm text-stone-500 bg-stone-50 rounded-lg p-3 space-y-2">
+                    <p><strong class="text-stone-600">Tirzepatide</strong> and <strong class="text-stone-600">Retatrutide</strong> have preset vial sizes and dose ranges to help with recommendations.</p>
+                    <p><strong class="text-stone-600">Custom</strong> lets you enter any peptide name and configure it manually.</p>
+                    <p><strong class="text-stone-600">Combination</strong> is for blended vials containing multiple peptides mixed together.</p>
+                  </div>
+                </div>
                 <div class="flex flex-wrap gap-2">
                   <!-- Custom peptide input (first) -->
                   <div class="relative">
@@ -1468,6 +1500,19 @@
             <template x-if="!isBlend">
               <div class="space-y-3">
                 <p class="text-sm text-stone-500">Check your vial label for the total mg</p>
+                <!-- Learn more -->
+                <div>
+                  <button class="learn-more" @click="learnMore[2] = !learnMore[2]">
+                    <span x-text="learnMore[2] ? 'Hide details' : 'Learn more'"></span>
+                    <svg class="w-3.5 h-3.5" :class="learnMore[2] && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  <div x-show="learnMore[2]" x-collapse class="mt-2 text-sm text-stone-500 bg-stone-50 rounded-lg p-3 space-y-2">
+                    <p>The vial label shows the <strong class="text-stone-600">total peptide amount</strong> in milligrams (mg). This is the powder inside before you add water.</p>
+                    <p>Common sizes are preset below, or enter a custom amount if yours is different. Getting this right is important—it determines your concentration after mixing.</p>
+                  </div>
+                </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <template x-for="size in peptide.commonVials" :key="size">
                     <button
@@ -1546,6 +1591,20 @@
             <template x-if="!isBlend">
               <div class="space-y-3">
                 <p class="text-sm text-stone-500">Select your typical dosing range to optimize dilution</p>
+                <!-- Learn more -->
+                <div>
+                  <button class="learn-more" @click="learnMore[3] = !learnMore[3]">
+                    <span x-text="learnMore[3] ? 'Hide details' : 'Learn more'"></span>
+                    <svg class="w-3.5 h-3.5" :class="learnMore[3] && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  <div x-show="learnMore[3]" x-collapse class="mt-2 text-sm text-stone-500 bg-stone-50 rounded-lg p-3 space-y-2">
+                    <p>Your dose range helps us recommend the right amount of water. We aim for <strong class="text-stone-600">easy-to-read syringe draws</strong> in the 10-30 unit range.</p>
+                    <p><strong class="text-stone-600">Micro/Small</strong> ranges are common for starting or maintenance. <strong class="text-stone-600">Medium/High</strong> ranges are for those who have titrated up over time.</p>
+                    <p>If unsure, start with a small dose range—you can always adjust later.</p>
+                  </div>
+                </div>
                 <template x-if="Object.keys(peptide.doseRanges).length > 0">
                   <div class="flex flex-wrap gap-2">
                     <template x-for="(range, key) in peptide.doseRanges" :key="key">
@@ -1621,7 +1680,7 @@
           </div>
         </div>
 
-        <!-- Step 4: BAC Water -->
+        <!-- Step 4: Reconstitution -->
         <div x-show="wizardStep >= 4" class="card rounded-xl overflow-hidden">
           <div
             class="px-3 sm:px-4 py-2.5 flex items-center justify-between cursor-pointer"
@@ -1637,12 +1696,26 @@
               <div x-show="wizardStep === 4" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium bg-stone-200 text-stone-600">
                 4
               </div>
-              <div class="font-medium text-stone-800 text-sm">BAC Water</div>
+              <div class="font-medium text-stone-800 text-sm">Reconstitution</div>
             </div>
             <div x-show="wizardStep > 4" class="text-sm font-mono text-stone-600" x-text="waterMl + ' mL'"></div>
           </div>
           <div x-show="wizardStep === 4" x-collapse class="px-3 sm:px-4 pb-4 space-y-3">
-            <p class="text-sm text-stone-500">Add this amount of BAC (bacteriostatic) water to your peptide vial to dissolve the powder. More water means a lower concentration and larger, easier-to-measure draws.</p>
+            <p class="text-sm text-stone-500">Choose how much BAC water to add to your vial. Use our recommendation below or enter a custom amount.</p>
+            <!-- Learn more -->
+            <div>
+              <button class="learn-more" @click="learnMore[4] = !learnMore[4]">
+                <span x-text="learnMore[4] ? 'Hide details' : 'Learn more'"></span>
+                <svg class="w-3.5 h-3.5" :class="learnMore[4] && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <div x-show="learnMore[4]" x-collapse class="mt-2 text-sm text-stone-500 bg-stone-50 rounded-lg p-3 space-y-2">
+                <p><strong class="text-stone-600">What is reconstitution?</strong> Peptides come as a freeze-dried powder that must be mixed with bacteriostatic (BAC) water before use. This creates an injectable solution.</p>
+                <p><strong class="text-stone-600">How to do it:</strong> Draw BAC water into a syringe, insert through the vial stopper, and slowly add water down the inside wall. Gently swirl (don't shake) until fully dissolved.</p>
+                <p><strong class="text-stone-600">Storage:</strong> Once mixed, refrigerate. Most peptides stay stable for 4-6 weeks after reconstitution.</p>
+              </div>
+            </div>
 
             <!-- Current value row with editable input -->
             <div class="flex items-center flex-wrap gap-2 text-sm">
@@ -1655,15 +1728,6 @@
                   class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
                 <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
               </div>
-              <span class="text-stone-400">→</span>
-              <!-- Regular peptide concentration -->
-              <span x-show="!isBlend" class="text-stone-600">
-                <span class="font-mono" x-text="fmtConc(vialMg / waterMl)"></span> mg/mL
-              </span>
-              <!-- Blend concentrations -->
-              <span x-show="isBlend" class="text-stone-600">
-                <span class="font-mono" x-text="fmtConc(blendComponents[0]?.mg / waterMl)"></span> / <span class="font-mono" x-text="fmtConc(blendComponents[1]?.mg / waterMl)"></span> mg/mL
-              </span>
               <span class="text-stone-400">→</span>
               <!-- Units display -->
               <span x-show="!isBlend && doseMin !== doseMax" class="text-stone-600">
@@ -1691,13 +1755,6 @@
               <div class="flex items-center flex-wrap gap-2 text-sm">
               <span class="text-teal-700 font-medium">Recommended:</span>
               <span class="font-mono text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
-              <span class="text-teal-400">→</span>
-              <span x-show="!isBlend" class="text-teal-600">
-                <span class="font-mono" x-text="fmtConc(recommendation.concentration)"></span> mg/mL
-              </span>
-              <span x-show="isBlend" class="text-teal-600">
-                <span class="font-mono" x-text="fmtConc(blendComponents[0]?.mg / recommendation.waterMl)"></span> / <span class="font-mono" x-text="fmtConc(blendComponents[1]?.mg / recommendation.waterMl)"></span> mg/mL
-              </span>
               <span class="text-teal-400">→</span>
               <span x-show="!isBlend && doseMin !== doseMax" class="text-teal-600">
                 draws <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> units
