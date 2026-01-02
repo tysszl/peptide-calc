@@ -386,7 +386,7 @@
         description: 'Dual GLP-1/GIP agonist for weight management',
         commonVials: [12, 18, 24, 34, 60],
         doseRanges: {
-          micro: { min: 1, max: 2.5, label: 'Micro' },
+          micro: { min: 0.5, max: 2.5, label: 'Micro' },
           small: { min: 2.5, max: 5, label: 'Small' },
           medium: { min: 5, max: 10, label: 'Medium' },
           high: { min: 10, max: 15, label: 'High' }
@@ -1614,7 +1614,7 @@
                         class="pill-btn px-3 py-1.5 rounded-lg text-sm"
                       >
                         <span x-text="range.label"></span>
-                        <span :class="doseMin === range.min && doseMax === range.max ? 'text-white/70' : 'text-stone-400'" class="ml-1 text-xs">(<span x-text="range.min"></span>–<span x-text="range.max"></span>)</span>
+                        <span :class="doseMin === range.min && doseMax === range.max ? 'text-white/70' : 'text-stone-400'" class="ml-1 text-xs">(<span x-text="range.min"></span>–<span x-text="range.max"></span>mg)</span>
                       </button>
                     </template>
                   </div>
