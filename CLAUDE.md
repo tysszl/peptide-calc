@@ -2,28 +2,29 @@
 
 A web-based peptide dilution and dosing calculator.
 
-## Hosting
+## Commands
 
-- **GitHub Repository**: https://github.com/tysszl/peptide-calc
-- **Local Development**: `python3 -m http.server 8000` then open http://localhost:8000
-
-## Project Structure
-
-- `index.html` - Single-file application containing all HTML, CSS (Tailwind), and JavaScript (Alpine.js)
-- `js/` - Modular JS files (legacy, not currently used - all code is in index.html)
-- `css/` - Stylesheet (legacy)
-
-## Key Features
-
-- **Guided Mode**: Step-by-step wizard for new users
-- **Advanced Mode**: Quick calculator for experienced users
-- Supports Tirzepatide, Retatrutide, and custom peptides
-- Visual syringe representation with fill indicator
-- Smart BAC water recommendations based on dose range
-- Local storage for persisting settings
+python3 -m http.server 8000   # Start local server at localhost:8000
 
 ## Tech Stack
 
 - Alpine.js for reactivity
-- Tailwind CSS for styling
-- No build step required - runs directly in browser
+- Tailwind CSS via CDN
+- Single-file app - no build step required
+
+## Project Structure
+
+index.html     # Entire app (HTML + CSS + JS)
+favicon.svg    # Site icon
+PLAN.md        # Detailed spec and design decisions
+
+## Conventions
+
+- Keep everything in index.html (single-file architecture)
+- Use Alpine.js x-data for state, x-show/x-if for conditionals
+- Tailwind utility classes for all styling
+
+## Reference Docs
+
+- `PLAN.md` - Original design spec with peptide data, reconstitution logic, and UI decisions
+- GitHub: https://github.com/tysszl/peptide-calc
