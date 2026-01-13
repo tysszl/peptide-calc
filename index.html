@@ -7,10 +7,10 @@
   <meta name="description" content="Simple peptide reconstitution and dosing calculator. Get the right units every time.">
   <meta name="robots" content="noindex, nofollow">
 
-  <!-- Fonts: Fraunces (elegant serif), Outfit (friendly sans), JetBrains Mono (precise numbers) -->
+  <!-- Fonts: Instrument Serif (display), Outfit (body), JetBrains Mono (numbers) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -33,24 +33,24 @@
               500: '#78716C',
               600: '#57534E',
               700: '#44403C',
-              800: '#292524',
+              800: '#0a0a0a',
               900: '#1C1917'
             },
-            teal: {
-              50: '#F0FDFA',
-              100: '#CCFBF1',
-              200: '#99F6E4',
-              300: '#5EEAD4',
-              400: '#2DD4BF',
-              500: '#14B8A6',
-              600: '#0D9488',
-              700: '#0F766E',
-              800: '#115E59',
-              900: '#134E4A'
+            accent: {
+              50: '#fafaf9',
+              100: '#f5f5f4',
+              200: '#e7e5e4',
+              300: '#d6d3d1',
+              400: '#a8a29e',
+              500: '#0a0a0a',
+              600: '#292925',
+              700: '#44403c',
+              800: '#292524',
+              900: '#1c1917'
             }
           },
           fontFamily: {
-            serif: ['Fraunces', 'Georgia', 'serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif'],
             sans: ['Outfit', 'system-ui', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace']
           }
@@ -60,6 +60,10 @@
   </script>
 
   <style>
+    :root {
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -72,8 +76,7 @@
 
     /* Typography utilities */
     .font-display {
-      font-family: 'Fraunces', Georgia, serif;
-      font-optical-sizing: auto;
+      font-family: 'Instrument Serif', Georgia, serif;
     }
 
     /* Card styling */
@@ -111,7 +114,7 @@
 
     .input-field:focus {
       outline: none;
-      border-color: #0D9488;
+      border-color: #0a0a0a;
       background: white;
     }
 
@@ -133,13 +136,13 @@
     }
 
     .select-card.selected {
-      border-color: #0D9488;
-      background: #F0FDFA;
+      border-color: #0a0a0a;
+      background: #f5f5f4;
     }
 
     .select-card.selected .select-indicator {
-      background: #0D9488;
-      border-color: #0D9488;
+      background: #0a0a0a;
+      border-color: #0a0a0a;
     }
 
     .select-indicator {
@@ -176,13 +179,13 @@
     }
 
     .pill-btn:hover {
-      border-color: #0D9488;
-      color: #0D9488;
+      border-color: #0a0a0a;
+      color: #0a0a0a;
     }
 
     .pill-btn.active {
-      background: #0D9488;
-      border-color: #0D9488;
+      background: #0a0a0a;
+      border-color: #0a0a0a;
       color: white;
     }
 
@@ -195,48 +198,48 @@
 
     .progress-fill {
       height: 100%;
-      background: #0D9488;
+      background: #0a0a0a;
       border-radius: 2px;
-      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.6s var(--ease-out-expo);
     }
 
     /* Step transitions */
     .step-content {
-      animation: fadeSlideIn 0.4s ease-out;
+      animation: fadeSlideIn 0.6s var(--ease-out-expo);
     }
 
     @keyframes fadeSlideIn {
       from {
         opacity: 0;
-        transform: translateX(20px);
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0);
       }
     }
 
     /* Syringe styles */
     .syringe-liquid {
-      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.4s var(--ease-out-expo);
     }
 
     /* Result number animation */
     .result-number {
-      transition: all 0.3s ease;
+      transition: all 0.3s var(--ease-out-expo);
     }
 
     /* Button styles */
     .btn-primary {
-      background: #0D9488;
+      background: #0a0a0a;
       color: white;
       transition: all 0.2s ease;
     }
 
     .btn-primary:hover {
-      background: #0F766E;
+      background: #292925;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .btn-primary:active {
@@ -263,7 +266,7 @@
     }
 
     .compact-input:focus-within {
-      border-color: #0D9488;
+      border-color: #1a56db;
       background: white;
     }
 
@@ -295,20 +298,19 @@
 
     /* Focus visible */
     :focus-visible {
-      outline: 2px solid #0D9488;
+      outline: 2px solid #1a56db;
       outline-offset: 2px;
     }
 
     /* Recommendation badge */
     .badge-recommended {
-      background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+      background: linear-gradient(135deg, #1a56db 0%, #1648b8 100%);
       color: white;
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       padding: 3px 8px;
-      border-radius: 4px;
     }
 
     /* Warning/info states */
@@ -319,9 +321,9 @@
     }
 
     .info-soft {
-      background: #F0FDFA;
-      border: 1px solid #99F6E4;
-      color: #115E59;
+      background: #eff4ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
     }
 
     /* Tooltips */
@@ -335,7 +337,7 @@
       bottom: 100%;
       left: 50%;
       transform: translateX(-50%);
-      background: #292524;
+      background: #0a0a0a;
       color: white;
       padding: 6px 10px;
       border-radius: 6px;
@@ -366,7 +368,7 @@
       transition: color 0.15s ease;
     }
     .learn-more:hover {
-      color: #0D9488;
+      color: #1a56db;
     }
     .learn-more svg {
       transition: transform 0.2s ease;
@@ -643,9 +645,9 @@
           <defs>
             <!-- Liquid gradient (clear/light blue like actual peptide solution) -->
             <linearGradient id="liquid" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#E0F7FA" stop-opacity="0.7"/>
-              <stop offset="50%" stop-color="#B2EBF2" stop-opacity="0.8"/>
-              <stop offset="100%" stop-color="#80DEEA" stop-opacity="0.7"/>
+              <stop offset="0%" stop-color="#bbf7d0" stop-opacity="0.7"/>
+              <stop offset="50%" stop-color="#4ade80" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#22c55e" stop-opacity="0.7"/>
             </linearGradient>
 
             <!-- Warning liquid -->
@@ -762,8 +764,8 @@
 
           <!-- DOSE INDICATOR LINE -->
           ${fillPct > 0 && clampedUnits > 0 ? `
-            <line x1="${indicatorX}" y1="${barrelY - 8}" x2="${indicatorX}" y2="${barrelY + barrelH + 16}" stroke="${exceedsSyringe ? '#D32F2F' : '#00897B'}" stroke-width="2" stroke-linecap="round"/>
-            <polygon points="${indicatorX - 5},${barrelY - 8} ${indicatorX + 5},${barrelY - 8} ${indicatorX},${barrelY - 1}" fill="${exceedsSyringe ? '#D32F2F' : '#00897B'}"/>
+            <line x1="${indicatorX}" y1="${barrelY - 8}" x2="${indicatorX}" y2="${barrelY + barrelH + 16}" stroke="${exceedsSyringe ? '#D32F2F' : '#1a56db'}" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="${indicatorX - 5},${barrelY - 8} ${indicatorX + 5},${barrelY - 8} ${indicatorX},${barrelY - 1}" fill="${exceedsSyringe ? '#D32F2F' : '#1a56db'}"/>
           ` : ''}
         </svg>
       `;
@@ -1307,7 +1309,7 @@
               <template x-for="setup in savedSetups" :key="setup.id">
                 <div
                   class="group flex items-center justify-between px-3 py-2 hover:bg-stone-50 cursor-pointer"
-                  :class="activeSetupId === setup.id ? 'bg-teal-50' : ''"
+                  :class="activeSetupId === setup.id ? 'bg-accent-50' : ''"
                   @click="loadSetup(setup)"
                 >
                   <span class="text-sm text-stone-700 truncate mr-2" x-text="setup.name"></span>
@@ -1336,7 +1338,7 @@
             <button
               @click="toggleWizard()"
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-              :class="showWizard ? 'bg-teal-500 text-white hover:bg-teal-600' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
+              :class="showWizard ? 'bg-accent-500 text-white hover:bg-accent-600' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
@@ -1359,7 +1361,7 @@
           >
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                   :class="wizardStep > 1 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                   :class="wizardStep > 1 ? 'bg-accent-500 text-white' : 'bg-stone-200 text-stone-600'">
                 <span x-show="wizardStep <= 1">1</span>
                 <svg x-show="wizardStep > 1" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -1443,7 +1445,7 @@
                         :value="comp.name"
                         @input="updateBlendComponent(idx, 'name', $event.target.value)"
                         :placeholder="'Peptide ' + (idx + 1)"
-                        class="w-28 px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                        class="w-28 px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500/50"
                       >
                       <div class="flex items-center">
                         <input
@@ -1452,7 +1454,7 @@
                           @change="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
                           @blur="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
                           placeholder="0"
-                          class="w-14 px-2 py-2 rounded-l-lg border border-stone-200 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                          class="w-14 px-2 py-2 rounded-l-lg border border-stone-200 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-accent-500/50"
                         >
                         <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r-lg px-2 py-2 text-stone-500 text-xs">mg</span>
                       </div>
@@ -1485,7 +1487,7 @@
           >
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                   :class="wizardStep > 2 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                   :class="wizardStep > 2 ? 'bg-accent-500 text-white' : 'bg-stone-200 text-stone-600'">
                 <span x-show="wizardStep <= 2">2</span>
                 <svg x-show="wizardStep > 2" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -1528,7 +1530,7 @@
                     <span x-show="peptide.commonVials.length > 0" class="text-xs text-stone-400">or</span>
                     <div
                       class="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-colors"
-                      :class="!peptide.commonVials.includes(vialMg) && vialMg ? 'border-teal-500 bg-teal-50' : 'border-transparent'"
+                      :class="!peptide.commonVials.includes(vialMg) && vialMg ? 'border-accent-500 bg-accent-50' : 'border-transparent'"
                     >
                       <input type="text" inputmode="decimal"
                         :value="peptide.commonVials.includes(vialMg) ? '' : vialMg"
@@ -1576,7 +1578,7 @@
           >
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                   :class="wizardStep > 3 ? 'bg-teal-500 text-white' : 'bg-stone-200 text-stone-600'">
+                   :class="wizardStep > 3 ? 'bg-accent-500 text-white' : 'bg-stone-200 text-stone-600'">
                 <span x-show="wizardStep <= 3">3</span>
                 <svg x-show="wizardStep > 3" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -1648,7 +1650,7 @@
                     <input type="text" inputmode="decimal"
                       x-model.number="currentDose"
                       @input="$nextTick(() => { doseMin = currentDose; doseMax = currentDose })"
-                      class="w-14 px-2 py-2 rounded-l-lg border border-stone-200 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                      class="w-14 px-2 py-2 rounded-l-lg border border-stone-200 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-accent-500/50"
                       placeholder="0.5">
                     <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r-lg px-2 py-2 text-stone-500 text-xs">mg</span>
                   </div>
@@ -1688,7 +1690,7 @@
             @click="wizardStep = wizardStep === 4 ? 5 : 4"
           >
             <div class="flex items-center gap-2">
-              <div x-show="wizardStep > 4" class="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center">
+              <div x-show="wizardStep > 4" class="w-6 h-6 rounded-full bg-accent-500 flex items-center justify-center">
                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
@@ -1725,7 +1727,7 @@
                   @input="waterManuallySet = true"
                   @change="waterMl = parseFloat($event.target.value) || waterMl; waterManuallySet = true"
                   @blur="waterMl = parseFloat($event.target.value) || waterMl"
-                  class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                  class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-accent-400">
                 <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
               </div>
               <span class="text-stone-400">→</span>
@@ -1750,24 +1752,24 @@
             </div>
 
             <!-- Recommended row (shown when different from current) -->
-            <div x-show="waterMl !== recommendation.waterMl" class="bg-teal-50 border border-teal-200 rounded-lg p-2 space-y-1">
-              <div class="text-xs text-teal-600">We recommend this amount for easy-to-read syringe draws in your dose range:</div>
+            <div x-show="waterMl !== recommendation.waterMl" class="bg-accent-50 border border-accent-200 rounded-lg p-2 space-y-1">
+              <div class="text-xs text-accent-600">We recommend this amount for easy-to-read syringe draws in your dose range:</div>
               <div class="flex items-center flex-wrap gap-2 text-sm">
-              <span class="text-teal-700 font-medium">Recommended:</span>
-              <span class="font-mono text-teal-700" x-text="recommendation.waterMl + ' mL'"></span>
-              <span class="text-teal-400">→</span>
-              <span x-show="!isBlend && doseMin !== doseMax" class="text-teal-600">
+              <span class="text-accent-700 font-medium">Recommended:</span>
+              <span class="font-mono text-accent-700" x-text="recommendation.waterMl + ' mL'"></span>
+              <span class="text-accent-400">→</span>
+              <span x-show="!isBlend && doseMin !== doseMax" class="text-accent-600">
                 draws <span class="font-mono" x-text="recommendation.minUnits"></span>–<span class="font-mono" x-text="recommendation.maxUnits"></span> units
               </span>
-              <span x-show="!isBlend && doseMin === doseMax" class="text-teal-600">
+              <span x-show="!isBlend && doseMin === doseMax" class="text-accent-600">
                 draws <span class="font-mono" x-text="recommendation.minUnits"></span> units
               </span>
-              <span x-show="isBlend" class="text-teal-600">
+              <span x-show="isBlend" class="text-accent-600">
                 draws <span class="font-mono" x-text="recommendation.minUnits"></span> units
               </span>
               <button
                 @click="waterMl = recommendation.waterMl; waterManuallySet = false"
-                class="text-xs text-teal-600 hover:text-teal-800 underline ml-auto"
+                class="text-xs text-accent-600 hover:text-accent-800 underline ml-auto"
               >Use this</button>
               </div>
             </div>
@@ -1793,7 +1795,7 @@
             <button
               @click="saveSetup()"
               x-show="!isCurrentSetupSaved()"
-              class="text-xs text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+              class="text-xs text-stone-400 hover:text-accent-600 flex items-center gap-1 transition-colors"
             >
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
@@ -1803,14 +1805,14 @@
             <button
               @click="updateSetup()"
               x-show="isCurrentSetupSaved() && hasUnsavedDoseChange()"
-              class="text-xs text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+              class="text-xs text-stone-400 hover:text-accent-600 flex items-center gap-1 transition-colors"
             >
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               Save changes
             </button>
-            <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-xs text-teal-600 flex items-center gap-1">
+            <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-xs text-accent-600 flex items-center gap-1">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
@@ -1824,7 +1826,7 @@
                 :value="vialMg"
                 @change="vialMg = parseFloat($event.target.value) || vialMg; onVialChange();"
                 @blur="vialMg = parseFloat($event.target.value) || vialMg; onVialChange();"
-                class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-accent-400">
               <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mg</span>
             </div>
             <div class="relative flex-1 min-w-24 max-w-32">
@@ -1833,7 +1835,7 @@
                 @input="handlePeptideInput($event.target.value)"
                 @change="handlePeptideInput($event.target.value)"
                 placeholder="Peptide"
-                class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-teal-400 w-full">
+                class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-accent-400 w-full">
             </div>
             <div class="flex items-center gap-1.5">
               <span class="text-stone-400">in</span>
@@ -1842,7 +1844,7 @@
                   :value="waterMl"
                   @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
                   @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
-                  class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                  class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-accent-400">
                 <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
               </div>
             </div>
@@ -1857,7 +1859,7 @@
               <button
                 @click="saveSetup()"
                 x-show="!isCurrentSetupSaved()"
-                class="text-xs text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+                class="text-xs text-stone-400 hover:text-accent-600 flex items-center gap-1 transition-colors"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
@@ -1867,14 +1869,14 @@
               <button
                 @click="updateSetup()"
                 x-show="isCurrentSetupSaved() && hasUnsavedDoseChange()"
-                class="text-xs text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+                class="text-xs text-stone-400 hover:text-accent-600 flex items-center gap-1 transition-colors"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
                 Save changes
               </button>
-              <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-xs text-teal-600 flex items-center gap-1">
+              <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-xs text-accent-600 flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
@@ -1897,7 +1899,7 @@
                         @change="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
                         @blur="updateBlendComponent(idx, 'mg', parseFloat($event.target.value) || null)"
                         placeholder="mg"
-                        class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                        class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-accent-400">
                       <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mg</span>
                     </div>
                     <input type="text"
@@ -1905,7 +1907,7 @@
                       @change="updateBlendComponent(idx, 'name', $event.target.value)"
                       @blur="updateBlendComponent(idx, 'name', $event.target.value)"
                       placeholder="Peptide"
-                      class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-teal-400 w-20">
+                      class="bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 text-sm focus:outline-none focus:border-accent-400 w-20">
                   </div>
                 </template>
               </div>
@@ -1917,7 +1919,7 @@
                     :value="waterMl"
                     @change="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
                     @blur="waterMl = parseFloat($event.target.value) || waterMl; onWaterManualChange();"
-                    class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                    class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-accent-400">
                   <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mL</span>
                 </div>
               </div>
@@ -1928,7 +1930,7 @@
               <button
                 @click="saveSetup()"
                 x-show="!isCurrentSetupSaved()"
-                class="text-xs text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+                class="text-xs text-stone-400 hover:text-accent-600 flex items-center gap-1 transition-colors"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
@@ -1938,14 +1940,14 @@
               <button
                 @click="updateSetup()"
                 x-show="isCurrentSetupSaved() && hasUnsavedDoseChange()"
-                class="text-xs text-stone-400 hover:text-teal-600 flex items-center gap-1 transition-colors"
+                class="text-xs text-stone-400 hover:text-accent-600 flex items-center gap-1 transition-colors"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
                 Save changes
               </button>
-              <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-xs text-teal-600 flex items-center gap-1">
+              <div x-show="isCurrentSetupSaved() && !hasUnsavedDoseChange()" class="text-xs text-accent-600 flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
@@ -1963,7 +1965,7 @@
         </div>
 
         <!-- Main Calculator - Combined Card -->
-        <div class="bg-gradient-to-b from-stone-50 to-teal-50 border-y border-stone-200">
+        <div class="bg-gradient-to-b from-stone-50 to-accent-50 border-y border-stone-200">
             <!-- Dose Input Section -->
             <!-- Regular peptide dose input -->
             <div x-show="!isBlend" class="px-3 sm:px-4 pt-2 pb-3 flex flex-col gap-1">
@@ -1973,21 +1975,21 @@
               <div class="flex flex-wrap items-center justify-center gap-2">
                 <span class="text-sm text-stone-500">For</span>
                 <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4)"
-                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
+                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-accent-400 hover:bg-accent-50 flex items-center justify-center text-stone-400 hover:text-accent-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
                 <div class="flex items-center gap-1.5">
                   <div class="flex items-center">
                     <input type="text" inputmode="decimal"
                       :value="currentDose"
                       @change="currentDose = parseFloat($event.target.value) || currentDose"
                       @blur="currentDose = parseFloat($event.target.value) || currentDose"
-                      class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-lg font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400"
+                      class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-lg font-semibold text-center text-stone-800 focus:outline-none focus:border-accent-400"
                       placeholder="2.5">
                     <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1.5 text-stone-500 text-xs">mg</span>
                   </div>
                   <span class="text-sm text-stone-600" x-text="peptideId === 'other' ? (customPeptideName || 'peptide') : peptide.name"></span>
                 </div>
                 <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4"
-                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
+                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-accent-400 hover:bg-accent-50 flex items-center justify-center text-stone-400 hover:text-accent-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
               </div>
             </div>
 
@@ -2001,7 +2003,7 @@
 
                 <!-- Minus button -->
                 <button @click="currentDose = Math.max(0.25, Math.round((currentDose - 0.25) * 4) / 4); doseMin = currentDose; doseMax = currentDose"
-                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
+                  class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-accent-400 hover:bg-accent-50 flex items-center justify-center text-stone-400 hover:text-accent-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">−</button>
 
                 <!-- Stacked dose rows with names -->
                 <div class="flex flex-col gap-1">
@@ -2012,7 +2014,7 @@
                         :value="currentDose"
                         @change="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
                         @blur="currentDose = parseFloat($event.target.value) || currentDose; doseMin = currentDose; doseMax = currentDose"
-                        class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base font-semibold text-center text-stone-800 focus:outline-none focus:border-teal-400">
+                        class="bg-white border border-stone-200 rounded-l py-1.5 px-2 w-14 font-mono text-base font-semibold text-center text-stone-800 focus:outline-none focus:border-accent-400">
                       <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1.5 text-stone-500 text-xs">mg</span>
                     </div>
                     <span class="text-sm text-stone-600" x-text="blendComponents[0]?.name || ''"></span>
@@ -2031,13 +2033,13 @@
 
               <!-- Plus button -->
               <button @click="currentDose = Math.round((currentDose + 0.25) * 4) / 4; doseMin = currentDose; doseMax = currentDose"
-                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-teal-400 hover:bg-teal-50 flex items-center justify-center text-stone-400 hover:text-teal-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
+                class="w-6 h-6 rounded-full bg-white border border-stone-200 hover:border-accent-400 hover:bg-accent-50 flex items-center justify-center text-stone-400 hover:text-accent-600 text-sm font-medium flex-shrink-0 transition-colors shadow-sm">+</button>
               </div>
             </div>
 
             <!-- Flow Arrow -->
             <div class="flex justify-center -my-1">
-              <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
               </svg>
             </div>
@@ -2046,9 +2048,9 @@
             <div class="px-4 pt-1 pb-2">
               <!-- Contextual Guidance -->
               <div class="text-center">
-                <span class="text-sm text-teal-700">Draw to the </span>
-                <span class="font-mono font-bold text-2xl text-teal-600" x-text="Math.round(units)"></span>
-                <span class="text-sm text-teal-700"> unit mark</span>
+                <span class="text-sm text-accent-700">Draw to the </span>
+                <span class="font-mono font-bold text-2xl text-accent-600" x-text="Math.round(units)"></span>
+                <span class="text-sm text-accent-700"> unit mark</span>
               </div>
 
 
@@ -2071,9 +2073,9 @@
             <div class="flex flex-col gap-1">
               <span class="text-xs text-stone-400">Syringe</span>
               <div class="flex">
-                <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                <button @click="syringeSize = '0.5'" :class="syringeSize === '0.5' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-stone-600 border-stone-200'"
                   class="px-2.5 py-1 rounded-l border font-mono text-xs transition-colors">0.5 mL</button>
-                <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-stone-600 border-stone-200'"
+                <button @click="syringeSize = '1.0'" :class="syringeSize === '1.0' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-stone-600 border-stone-200'"
                   class="px-2.5 py-1 rounded-r border border-l-0 font-mono text-xs transition-colors">1.0 mL</button>
               </div>
             </div>
