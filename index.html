@@ -452,6 +452,37 @@
     };
 
     // ============================================
+    // PEPTIDE DEFAULTS (for fuzzy matching custom input)
+    // ============================================
+    const PEPTIDE_DEFAULTS = [
+      { names: ['semaglutide', 'sema', 'ozempic', 'wegovy'], doseMin: 0.25, doseMax: 2.4, defaultDose: 0.5 },
+      { names: ['bpc-157', 'bpc157', 'bpc 157', 'bpc'], doseMin: 0.25, doseMax: 0.5, defaultDose: 0.25 },
+      { names: ['tb-500', 'tb500', 'tb-4', 'tb4', 'thymosin'], doseMin: 0.25, doseMax: 0.5, defaultDose: 0.25 },
+      { names: ['ghk-cu', 'ghk', 'ghkcu', 'copper peptide'], doseMin: 0.5, doseMax: 2, defaultDose: 0.5 },
+      { names: ['nad+', 'nad', 'nadh'], doseMin: 50, doseMax: 200, defaultDose: 100 },
+      { names: ['pt-141', 'pt141', 'bremelanotide'], doseMin: 0.5, doseMax: 2, defaultDose: 1 },
+      { names: ['ipamorelin', 'ipam'], doseMin: 0.1, doseMax: 0.3, defaultDose: 0.2 },
+      { names: ['cjc-1295', 'cjc1295', 'cjc'], doseMin: 0.1, doseMax: 0.3, defaultDose: 0.1 },
+      { names: ['mots-c', 'motsc', 'mots'], doseMin: 5, doseMax: 10, defaultDose: 5 },
+      { names: ['ss-31', 'ss31', 'elamipretide'], doseMin: 5, doseMax: 40, defaultDose: 10 },
+    ];
+
+    // Fuzzy match peptide name against known defaults
+    function matchPeptideDefaults(input) {
+      if (!input) return null;
+      const normalized = input.toLowerCase().trim();
+      for (const entry of PEPTIDE_DEFAULTS) {
+        for (const name of entry.names) {
+          // Match if input contains the name or name contains input (for partial matches)
+          if (normalized.includes(name) || name.includes(normalized)) {
+            return entry;
+          }
+        }
+      }
+      return null;
+    }
+
+    // ============================================
     // CALCULATIONS
     // ============================================
     // Returns fresh empty blend components array (must be function to avoid shared references)
@@ -1022,6 +1053,16 @@
           }
         },
 
+        // Apply fuzzy-matched peptide defaults for custom peptide names
+        applyPeptideDefaults(name) {
+          const defaults = matchPeptideDefaults(name);
+          if (defaults) {
+            this.doseMin = defaults.doseMin;
+            this.doseMax = defaults.doseMax;
+            this.currentDose = defaults.defaultDose;
+          }
+        },
+
         // Handle combo-box peptide input (Quick mode)
         handlePeptideInput(value) {
           // Check if input matches a known peptide name
@@ -1032,9 +1073,10 @@
           if (match) {
             this.selectPeptide(match[0]);
           } else {
-            // Custom peptide
+            // Custom peptide - check for fuzzy match to apply defaults
             this.peptideId = 'other';
             this.customPeptideName = value;
+            this.applyPeptideDefaults(value);
           }
         },
 
@@ -1402,6 +1444,7 @@
                       x-model="customPeptideName"
                       @focus="if(peptideId !== 'other') selectPeptide('other')"
                       @input="if(peptideId !== 'other') selectPeptide('other')"
+                      @blur="applyPeptideDefaults(customPeptideName)"
                       placeholder="Custom"
                       class="pill-btn px-4 py-2 rounded-lg text-sm font-medium w-28 text-center focus:outline-none"
                       :class="peptideId === 'other' ? 'active placeholder:text-white/60' : ''"
