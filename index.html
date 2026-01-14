@@ -486,6 +486,9 @@
       const preferredConcentrations = [5, 10, 20]; // Preferred clean concentrations
       const targetMinUnits = 10; // Target ~10 units for minimum dose
 
+      // Standard 3mL vials can actually hold up to 3.5mL
+      const maxWaterMl = 3.5;
+
       // Calculate ideal concentration where minDose = 10 units
       // units = (dose / concentration) * 100, so concentration = dose * 10
       const idealConc = minDose * 10;
@@ -505,8 +508,8 @@
             maxUnits: Math.round(maxUnits * 10) / 10,
             // How close is minUnits to our target of 10?
             distanceFromTarget: Math.abs(minUnits - targetMinUnits),
-            // Is water amount reasonable? (vials typically hold max 3mL)
-            isValidWater: waterMl >= 0.5 && waterMl <= 3,
+            // Is water amount reasonable? Dynamic limit based on vial size
+            isValidWater: waterMl >= 0.5 && waterMl <= maxWaterMl,
             // Does max dose fit in syringe?
             fitsInSyringe: maxUnits <= syringeUnits
           };
@@ -531,11 +534,11 @@
         };
       }
 
-      // Fallback: use 2mL
-      const fallbackWater = 2;
+      // Fallback: calculate water to achieve ~10 mg/mL, within limits
+      const fallbackWater = Math.min(maxWaterMl, Math.max(0.5, vialMg / 10));
       const fallbackConc = vialMg / fallbackWater;
       return {
-        waterMl: fallbackWater,
+        waterMl: Math.round(fallbackWater * 100) / 100,
         concentration: fallbackConc,
         minUnits: Math.round((minDose / fallbackConc) * 100),
         maxUnits: Math.round((maxDose / fallbackConc) * 100),
@@ -548,16 +551,19 @@
     function recommendWaterSimple(vialMg) {
       const allowedConcentrations = [10, 5, 20]; // Prefer 10, then 5, then 20
 
+      // Standard 3mL vials can actually hold up to 3.5mL
+      const maxWaterMl = 3.5;
+
       for (const conc of allowedConcentrations) {
         const waterMl = vialMg / conc;
-        // Only allow reasonable water volumes (0.5 to 3 mL for standard vials)
-        if (waterMl >= 0.5 && waterMl <= 3) {
+        // Allow water volumes within limit
+        if (waterMl >= 0.5 && waterMl <= maxWaterMl) {
           return Math.round(waterMl * 100) / 100; // Round to 2 decimals
         }
       }
 
-      // Fallback to 2mL if no clean concentration works
-      return 2;
+      // Fallback: target ~10 mg/mL within limits
+      return Math.round(Math.min(maxWaterMl, Math.max(0.5, vialMg / 10)) * 100) / 100;
     }
 
     // ============================================
@@ -1824,7 +1830,7 @@
                 :value="vialMg"
                 @change="vialMg = parseFloat($event.target.value) || vialMg; onVialChange();"
                 @blur="vialMg = parseFloat($event.target.value) || vialMg; onVialChange();"
-                class="bg-white border border-stone-200 rounded-l px-2 py-1 w-10 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
+                class="bg-white border border-stone-200 rounded-l px-2 py-1 w-12 font-mono text-center text-stone-800 text-sm focus:outline-none focus:border-teal-400">
               <span class="bg-stone-100 border border-l-0 border-stone-200 rounded-r px-1.5 py-1 text-stone-500 text-xs">mg</span>
             </div>
             <div class="relative flex-1 min-w-24 max-w-32">
